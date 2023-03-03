@@ -62,6 +62,21 @@
             <scope>compile</scope>
         </dependency>
         <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+            <version>1.3.2</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
+            <version>5.2.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.jaxrs</groupId>
+            <artifactId>jackson-jaxrs-json-provider</artifactId>
+            <version>2.14.2</version>
+        </dependency>
+        <dependency>
             <groupId>io.airlift</groupId>
             <artifactId>command</artifactId>
             <scope>test</scope>
@@ -206,7 +221,7 @@
                 <configuration>
                     <instructions>
                         <Bundle-Activator>org.killbill.billing.plugin.vertex.VertexActivator</Bundle-Activator>
-                        <Export-Package />
+                        <Export-Package/>
                         <Private-Package>org.killbill.billing.plugin.vertex.*</Private-Package>
                         <!-- Optional resolution because exported by the Felix system bundle -->
                         <Import-Package>
@@ -270,11 +285,11 @@
                             javax.naming;
                             javax.net;
                             javax.net.ssl;
-							sun.misc;
-							sun.misc.unsafe;
-							sun.security;
-							sun.security.util;
-							org.osgi.service.log;
+                            sun.misc;
+                            sun.misc.unsafe;
+                            sun.security;
+                            sun.security.util;
+                            org.osgi.service.log;
                             version="[0,3)",
                             *;resolution:=optional
                         </Import-Package>
@@ -316,6 +331,36 @@
                                     </excludes>
                                 </filter>
                             </filters>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.openapitools</groupId>
+                <artifactId>openapi-generator-maven-plugin</artifactId>
+                <!-- RELEASE_VERSION -->
+                <version>6.4.0</version>
+                <!-- /RELEASE_VERSION -->
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>generate</goal>
+                        </goals>
+                        <configuration>
+                            <inputSpec>${project.basedir}/api/tax-calc-api-v2.json</inputSpec>
+                            <generatorName>java</generatorName>
+                            <configOptions>
+                                <sourceFolder>src/gen/java/main</sourceFolder>
+                            </configOptions>
+                            <skipValidateSpec>true</skipValidateSpec>
+                            <generateApiTests>false</generateApiTests>
+                            <generateApiDocumentation>false</generateApiDocumentation>
+                            <generateModelTests>false</generateModelTests>
+                            <generateModelDocumentation>false</generateModelDocumentation>
+                            <legacyDiscriminatorBehavior>false</legacyDiscriminatorBehavior>
+                            <apiPackage>org.killbill.billing.plugin.vertex.client</apiPackage>
+                            <modelPackage>org.killbill.billing.plugin.vertex.client.model</modelPackage>
+                            <library>apache-httpclient</library>
                         </configuration>
                     </execution>
                 </executions>
