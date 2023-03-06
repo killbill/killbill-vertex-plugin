@@ -26,19 +26,17 @@ import java.util.UUID;
 
 import javax.annotation.Nullable;
 
-import org.joda.money.CurrencyUnit;
-import org.joda.time.LocalDate;
 import org.killbill.billing.ErrorCode;
-import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceApiException;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
-import org.killbill.billing.osgi.libs.killbill.OSGIKillbillLogService;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.invoice.PluginInvoiceItem;
 import org.killbill.billing.plugin.api.invoice.PluginInvoicePluginApi;
+import org.killbill.billing.plugin.vertex.client.CalculateTaxApi;
+import org.killbill.billing.plugin.vertex.client.TransactionApi;
 import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.billing.util.entity.Entity;
 import org.killbill.clock.Clock;
@@ -54,15 +52,17 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
     private static final Logger log = LoggerFactory.getLogger(VertexInvoicePluginApi.class);
 
-    private final VertexConfigPropertiesConfigurationHandler vertexConfigPropertiesConfigurationHandler;
+    private final VertexTransactionApiConfigurationHandler vertexTransactionApiConfigurationHandler;
+    private final VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler;
 
-    public VertexInvoicePluginApi(final VertexConfigPropertiesConfigurationHandler vertexConfigPropertiesConfigurationHandler,
+    public VertexInvoicePluginApi(final VertexTransactionApiConfigurationHandler vertexTransactionApiConfigurationHandler,
+                                  final VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler,
                                   final OSGIKillbillAPI killbillAPI,
                                   final OSGIConfigPropertiesService configProperties,
-                                  final OSGIKillbillLogService logService,
                                   final Clock clock) {
-        super(killbillAPI, configProperties, logService, clock);
-        this.vertexConfigPropertiesConfigurationHandler = vertexConfigPropertiesConfigurationHandler;
+        super(killbillAPI, configProperties, clock);
+        this.vertexTransactionApiConfigurationHandler = vertexTransactionApiConfigurationHandler;
+        this.vertexCalculateTaxApiConfigurationHandler = vertexCalculateTaxApiConfigurationHandler;
     }
 
     @Override
@@ -71,9 +71,12 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
                                                        final Iterable<PluginProperty> properties,
                                                        final CallContext context) {
         final List<InvoiceItem> newItems = extractNewInvoiceItems(newInvoice, context);
-        final VertexClient vertexClient = vertexConfigPropertiesConfigurationHandler.getConfigurable(context.getTenantId());
+        final TransactionApi vertexTransactionApiClient = vertexTransactionApiConfigurationHandler
+                .getConfigurable(context.getTenantId());
+        final CalculateTaxApi vertexCalculateTaxApiClient = vertexCalculateTaxApiConfigurationHandler
+                .getConfigurable(context.getTenantId());
 
-        final List<InvoiceItem> additionalInvoiceItems = new LinkedList<InvoiceItem>();
+        final List<InvoiceItem> additionalInvoiceItems = new LinkedList<>();
         for (final InvoiceItem newItem : newItems) {
             // TODO Do Tax Request
             // TODO Save Tax Response
@@ -83,11 +86,11 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
                 continue;
             }
 
-            if (isTaxableItem(newItem)) {
+            /*if (isTaxableItem(newItem)) {
                 additionalInvoiceItems.add(buildTaxItem(newItem, newInvoice.getId(), taxAmount, "Tax"));
             } else if (isAdjustmentItem(newItem)) {
                 additionalInvoiceItems.add(buildTaxItem(newItem, newInvoice.getId(), taxAmount, "Tax adj"));
-            }
+            }*/
         }
 
         return additionalInvoiceItems;
