@@ -33,6 +33,7 @@ import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
+import org.killbill.billing.plugin.api.PluginProperties;
 import org.killbill.billing.plugin.api.invoice.PluginInvoiceItem;
 import org.killbill.billing.plugin.api.invoice.PluginInvoicePluginApi;
 import org.killbill.billing.plugin.vertex.client.CalculateTaxApi;
@@ -47,6 +48,8 @@ import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Iterables;
+
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_SKIP;
 
 public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
@@ -70,6 +73,10 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
                                                        final boolean dryRun,
                                                        final Iterable<PluginProperty> properties,
                                                        final CallContext context) {
+        if (PluginProperties.findPluginPropertyValue(VERTEX_SKIP, properties) != null) {
+            return ImmutableList.of();
+        }
+
         final List<InvoiceItem> newItems = extractNewInvoiceItems(newInvoice, context);
         final TransactionApi vertexTransactionApiClient = vertexTransactionApiConfigurationHandler
                 .getConfigurable(context.getTenantId());

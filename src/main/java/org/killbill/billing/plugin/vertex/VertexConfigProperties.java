@@ -17,33 +17,11 @@
 
 package org.killbill.billing.plugin.vertex;
 
-import com.google.common.base.Strings;
-
-import java.util.Map;
-import java.util.Properties;
-
 public class VertexConfigProperties {
 
     public static final String PROPERTY_PREFIX = "org.killbill.billing.plugin.vertex.";
-
-    private static final String ENTRY_DELIMITER = "|";
-    private static final String KEY_VALUE_DELIMITER = "#";
-
-    private final String region;
-
-    public VertexConfigProperties(final Properties properties, final String region) {
-        this.region = region;
-    }
-
-    private synchronized void refillMap(final Map<String, String> map, final String stringToSplit) {
-        map.clear();
-        if (!Strings.isNullOrEmpty(stringToSplit)) {
-            for (final String entry : stringToSplit.split("\\" + ENTRY_DELIMITER)) {
-                final String[] split = entry.split(KEY_VALUE_DELIMITER);
-                if (split.length > 1) {
-                    map.put(split[0], split[1]);
-                }
-            }
-        }
-    }
+    public static final String VERTEX_SKIP = "VERTEX_SKIP";
+    public static final String VERTEX_OSERIES_URL_PROPERTY = PROPERTY_PREFIX + "url";
+    public static final String VERTEX_OSERIES_CLIENT_ID_PROPERTY = PROPERTY_PREFIX + "clientId";
+    public static final String VERTEX_OSERIES_CLIENT_SECRET_PROPERTY = PROPERTY_PREFIX + "clientSecret";
 }

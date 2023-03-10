@@ -43,9 +43,9 @@ public class OAuthClient {
         this.objectMapper = createObjectMapper();
     }
 
-    public OAuthToken getToken(String baseUrl, String clientId, String clientSecret) {
+    public OAuthToken getToken(String url, String clientId, String clientSecret) {
         try (final CloseableHttpClient httpclient = HttpClients.createDefault()) {
-            HttpPost login = new HttpPost(baseUrl + "/oseries-auth/oauth/token");
+            HttpPost login = new HttpPost(url + "/oseries-auth/oauth/token");
             // form parameters.
             List<NameValuePair> nvps = new ArrayList<>();
             nvps.add(new BasicNameValuePair("grant_type", "client_credentials"));
