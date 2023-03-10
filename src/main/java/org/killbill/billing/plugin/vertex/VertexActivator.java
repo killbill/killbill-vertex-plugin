@@ -31,6 +31,7 @@ import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.killbill.billing.plugin.vertex.client.CalculateTaxApi;
 import org.killbill.billing.plugin.vertex.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.osgi.framework.BundleContext;
 
 public class VertexActivator extends KillbillActivatorBase {
@@ -44,10 +45,13 @@ public class VertexActivator extends KillbillActivatorBase {
     public void start(final BundleContext context) throws Exception {
         super.start(context);
 
+        OAuthClient oAuthClient = new OAuthClient();
         vertexTransactionApiConfigurationHandler = new VertexTransactionApiConfigurationHandler(PLUGIN_NAME,
-                                                                                                killbillAPI);
+                                                                                                killbillAPI,
+                                                                                                oAuthClient);
         vertexCalculateTaxApiConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(PLUGIN_NAME,
-                                                                                                  killbillAPI);
+                                                                                                  killbillAPI,
+                                                                                                  oAuthClient);
 
         final TransactionApi vertexTransactionApiClient = vertexTransactionApiConfigurationHandler.createConfigurable(configProperties.getProperties());
         vertexTransactionApiConfigurationHandler.setDefaultConfigurable(vertexTransactionApiClient);

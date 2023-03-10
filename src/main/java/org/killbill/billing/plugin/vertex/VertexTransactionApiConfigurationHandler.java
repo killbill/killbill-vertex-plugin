@@ -22,19 +22,25 @@ import java.util.Properties;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
 import org.killbill.billing.plugin.vertex.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 
 public class VertexTransactionApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<TransactionApi> {
 
+    private final OAuthClient oAuthClient;
+
     public VertexTransactionApiConfigurationHandler(final String pluginName,
-                                                    final OSGIKillbillAPI osgiKillbillAPI) {
+                                                    final OSGIKillbillAPI osgiKillbillAPI, final OAuthClient oAuthClient) {
         super(pluginName, osgiKillbillAPI);
+        this.oAuthClient = oAuthClient;
     }
 
     @Override
     protected TransactionApi createConfigurable(final Properties properties) {
         ApiClient apiClient = new ApiClient();
         apiClient.setBasePath("https://equinix2.ondemand.vertexinc.com/vertex-ws/");
-        String token = "Bearer <your access token>";
+        String token = oAuthClient.getToken("https://equinix2.ondemand.vertexinc.com/oseries-auth/oauth/token"
+                                          , "setClientId", "setClientSecret")
+                                  .getAccessToken();
         apiClient.setAccessToken(token);
         return new TransactionApi(apiClient);
     }
