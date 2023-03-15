@@ -18,6 +18,7 @@
 package org.killbill.billing.plugin.vertex;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,12 +33,21 @@ import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
+import org.killbill.billing.plugin.api.PluginProperties;
 import org.killbill.billing.plugin.vertex.client.CalculateTaxApi;
 import org.killbill.billing.plugin.vertex.client.model.ApiSuccessResponseTransactionResponseType;
+import org.killbill.billing.plugin.vertex.client.model.CurrencyType;
+import org.killbill.billing.plugin.vertex.client.model.CustomerCodeType;
+import org.killbill.billing.plugin.vertex.client.model.CustomerType;
+import org.killbill.billing.plugin.vertex.client.model.LocationType;
+import org.killbill.billing.plugin.vertex.client.model.MeasureType;
 import org.killbill.billing.plugin.vertex.client.model.OwnerResponseLineItemType;
+import org.killbill.billing.plugin.vertex.client.model.Product;
 import org.killbill.billing.plugin.vertex.client.model.SaleMessageTypeEnum;
+import org.killbill.billing.plugin.vertex.client.model.SaleRequestLineItemType;
 import org.killbill.billing.plugin.vertex.client.model.SaleRequestType;
 import org.killbill.billing.plugin.vertex.client.model.SaleTransactionTypeEnum;
+import org.killbill.billing.plugin.vertex.client.model.SellerType;
 import org.killbill.billing.plugin.vertex.client.model.TaxesType;
 import org.killbill.clock.Clock;
 import org.slf4j.Logger;
@@ -85,7 +95,6 @@ public class VertexTaxCalculator extends VertexCalculatorBase {
                                                         final LocalDate utcToday) throws ApiException {
         final CalculateTaxApi calculateTaxApi = vertexCalculateTaxApiConfigurationHandler.getConfigurable(kbTenantId);
         final String companyCode = "how to get this"; //fixme calculateTaxApi.getCompanyCode();
-        final boolean shouldCommitDocuments = true; //fixme calculateTaxApi.shouldCommitDocuments();
 
         final SaleRequestType taxRequest = toTaxRequest(companyCode,
                                                         account,
@@ -94,7 +103,6 @@ public class VertexTaxCalculator extends VertexCalculatorBase {
                                                         adjustmentItems,
                                                         originalInvoiceReferenceCode,
                                                         dryRun,
-                                                        shouldCommitDocuments,
                                                         pluginProperties,
                                                         utcToday);
         logger.info("CreateTransaction req: {}", taxRequest);
@@ -170,7 +178,6 @@ public class VertexTaxCalculator extends VertexCalculatorBase {
                                          @Nullable final Map<UUID, List<InvoiceItem>> adjustmentItems,
                                          @Nullable final String originalInvoiceReferenceCode,
                                          final boolean dryRun,
-                                         final boolean shouldCommitDocuments,
                                          final Iterable<PluginProperty> pluginProperties,
                                          final LocalDate utcToday) {
         Preconditions.checkState((originalInvoiceReferenceCode == null && (adjustmentItems == null || adjustmentItems.isEmpty())) ||
@@ -182,16 +189,113 @@ public class VertexTaxCalculator extends VertexCalculatorBase {
 
         final SaleRequestType taxRequest = new SaleRequestType();
         taxRequest.setTransactionType(SaleTransactionTypeEnum.SALE);
+        //taxRequest.type = originalInvoiceReferenceCode == null ? DocType.SalesInvoice : DocType.ReturnInvoice;fixme support return invoice
+        // We overload this field to keep a mapping with the Kill Bill invoice
+        taxRequest.setTransactionId(invoice.getId().toString());
+        taxRequest.setDocumentNumber(invoice.getInvoiceNumber().toString());
+        taxRequest.setDocumentDate(java.time.LocalDate.of(invoice.getInvoiceDate().getYear(), invoice.getInvoiceDate().getMonthOfYear(), invoice.getInvoiceDate().getDayOfMonth()));
+        taxRequest.setPostingDate(java.time.LocalDate.of(utcToday.getYear(), utcToday.getMonthOfYear(), utcToday.getDayOfMonth()));
+
+        CurrencyType currencyType = new CurrencyType();
+        currencyType.setIsoCurrencyCodeAlpha(invoice.getCurrency().name());
+        taxRequest.setCurrency(currencyType);
 
         if (dryRun) {
             taxRequest.setSaleMessageType(SaleMessageTypeEnum.QUOTATION);
         } else {
             taxRequest.setSaleMessageType(SaleMessageTypeEnum.INVOICE);
         }
+        CustomerType customerType = new CustomerType();
+        LocationType customerDestination = toAddress(account, pluginProperties);
+        customerType.setDestination(customerDestination);//todo set it here or per line item
+        CustomerCodeType code = new CustomerCodeType();
+        code.setValue(MoreObjects.firstNonNull(account.getExternalKey(), account.getId()).toString());
+        customerType.setCustomerCode(code);
+        taxRequest.setCustomer(customerType);
+        SellerType sellerType = new SellerType();
+        sellerType.setCompany(PluginProperties.getValue(PROPERTY_COMPANY_CODE, companyCode, pluginProperties));//todo from where take this value
+        sellerType.setDivision(PluginProperties.findPluginPropertyValue(CUSTOMER_USAGE_TYPE, pluginProperties));//todo from where take this value
+        taxRequest.setSeller(sellerType);
+        List<SaleRequestLineItemType> lineItemList = new ArrayList<>();
 
-        //todo add mapping
+        long lineNumber = 1;
+        for (InvoiceItem invoiceItem : taxableItems) {
+            lineItemList.add(toLine(invoiceItem,
+                                    adjustmentItems == null ? null : adjustmentItems.get(invoiceItem.getId()),
+                                    invoice.getInvoiceDate(),
+                                    pluginProperties, lineNumber));
+            lineNumber++;
+        }
+
+        taxRequest.setLineItems(lineItemList);
 
         return taxRequest;
     }
 
+    private SaleRequestLineItemType toLine(final InvoiceItem taxableItem,
+                                           @Nullable final Iterable<InvoiceItem> adjustmentItems,
+                                           @Nullable final LocalDate originalInvoiceDate,
+                                           final Iterable<PluginProperty> pluginProperties,
+                                           long lineNumber) {
+        final SaleRequestLineItemType lineItemModel = new SaleRequestLineItemType();
+        lineItemModel.setLineItemId(taxableItem.getId().toString());
+        lineItemModel.setLineItemNumber(lineNumber);
+
+        // SKU
+        Product product = new Product();
+        if (taxableItem.getUsageName() == null) {
+            if (taxableItem.getPhaseName() == null) {
+                if (taxableItem.getPlanName() == null) {
+                    product.setValue(taxableItem.getDescription());
+                } else {
+                    product.setValue(taxableItem.getPlanName());
+                }
+            } else {
+                product.setValue(taxableItem.getPhaseName());
+            }
+        } else {
+            product.setValue(taxableItem.getUsageName());
+        }
+        lineItemModel.setProduct(product);
+        MeasureType quantity = new MeasureType();
+        quantity.setValue(new Double(MoreObjects.firstNonNull(taxableItem.getQuantity(), 1).toString()));
+        lineItemModel.setQuantity(quantity);
+
+        // Compute the amount to tax or the amount to adjust
+        final BigDecimal adjustmentAmount = sum(adjustmentItems);
+        final boolean isReturnDocument = adjustmentAmount.compareTo(BigDecimal.ZERO) < 0;
+        Preconditions.checkState((adjustmentAmount.compareTo(BigDecimal.ZERO) == 0) ||
+                                 (isReturnDocument && taxableItem.getAmount().compareTo(adjustmentAmount.negate()) >= 0),
+                                 "Invalid adjustmentAmount %s for invoice item %s", adjustmentAmount, taxableItem);
+        lineItemModel.setExtendedPrice(isReturnDocument ? adjustmentAmount.doubleValue() : taxableItem.getAmount().doubleValue());//fixme is this ExtendedPrice
+
+        //lineItemModel.description = taxableItem.getDescription();fixme FlexibleCodeField?
+        //lineItemModel.ref1 = taxableItem.getId().toString();fixme FlexibleCodeField?
+        //lineItemModel.ref2 = taxableItem.getInvoiceId().toString();fixme FlexibleCodeField?
+
+        return lineItemModel;
+    }
+
+    private LocationType toAddress(final Account account, final Iterable<PluginProperty> pluginProperties) {
+        final LocationType addressLocationInfo = new LocationType();
+
+        final String line1 = PluginProperties.findPluginPropertyValue(LOCATION_ADDRESS1, pluginProperties);
+        if (line1 != null) {
+            addressLocationInfo.setStreetAddress1(line1);
+            addressLocationInfo.setStreetAddress2(PluginProperties.findPluginPropertyValue(LOCATION_ADDRESS2, pluginProperties));
+            addressLocationInfo.setCity(PluginProperties.findPluginPropertyValue(LOCATION_CITY, pluginProperties));
+            addressLocationInfo.setMainDivision(PluginProperties.findPluginPropertyValue(LOCATION_REGION, pluginProperties));
+            addressLocationInfo.setPostalCode(PluginProperties.findPluginPropertyValue(LOCATION_POSTAL_CODE, pluginProperties));
+            addressLocationInfo.setCountry(PluginProperties.findPluginPropertyValue(LOCATION_COUNTRY, pluginProperties));
+        } else {
+            addressLocationInfo.setStreetAddress1(account.getAddress1());
+            addressLocationInfo.setStreetAddress2(account.getAddress2());
+            addressLocationInfo.setCity(account.getCity());
+            addressLocationInfo.setMainDivision(account.getStateOrProvince());
+            addressLocationInfo.setPostalCode(account.getPostalCode());
+            addressLocationInfo.setCountry(account.getCountry());
+        }
+
+        return addressLocationInfo;
+    }
 }
