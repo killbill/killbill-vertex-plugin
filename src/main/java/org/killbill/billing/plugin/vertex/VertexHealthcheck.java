@@ -1,6 +1,6 @@
 /*
- * Copyright 2020 Equinix, Inc
- * Copyright 2020 The Billing Project, LLC
+ * Copyright 2020-2023 Equinix, Inc
+ * Copyright 2020-2023 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -30,10 +30,10 @@ public class VertexHealthcheck implements Healthcheck {
 
     private static final Logger logger = LoggerFactory.getLogger(VertexHealthcheck.class);
 
-    private final VertexConfigPropertiesConfigurationHandler vertexConfigPropertiesConfigurationHandler;
+    private final VertexTransactionApiConfigurationHandler vertexTransactionApiConfigurationHandler;
 
-    public VertexHealthcheck(final VertexConfigPropertiesConfigurationHandler vertexConfigPropertiesConfigurationHandler) {
-        this.vertexConfigPropertiesConfigurationHandler = vertexConfigPropertiesConfigurationHandler;
+    public VertexHealthcheck(final VertexTransactionApiConfigurationHandler vertexTransactionApiConfigurationHandler) {
+        this.vertexTransactionApiConfigurationHandler = vertexTransactionApiConfigurationHandler;
     }
 
     @Override
@@ -43,7 +43,8 @@ public class VertexHealthcheck implements Healthcheck {
             return HealthStatus.healthy("Vertex OK");
         } else {
             // Specifying the tenant lets you also validate the tenant configuration
-            final VertexClient vertexClient = vertexConfigPropertiesConfigurationHandler.getConfigurable(tenant.getId());
+            //fixme use health service
+            //final VertexClient vertexClient = vertexTransactionApiConfigPropertiesConfigurationHandler.getConfigurable(tenant.getId());
             return HealthStatus.healthy("Vertex OK");
         }
     }

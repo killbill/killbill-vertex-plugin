@@ -1,6 +1,6 @@
 /*
- * Copyright 2020 Equinix, Inc
- * Copyright 2020 The Billing Project, LLC
+ * Copyright 2020-2023 Equinix, Inc
+ * Copyright 2020-2023 The Billing Project, LLC
  *
  * The Billing Project licenses this file to you under the Apache License, version 2.0
  * (the "License"); you may not use this file except in compliance with the
@@ -22,51 +22,57 @@ import java.util.Hashtable;
 import javax.servlet.Servlet;
 import javax.servlet.http.HttpServlet;
 
+import org.killbill.billing.invoice.plugin.api.InvoicePluginApi;
 import org.killbill.billing.osgi.api.Healthcheck;
 import org.killbill.billing.osgi.api.OSGIPluginProperties;
 import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
-import org.killbill.billing.invoice.plugin.api.InvoicePluginApi;
 import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHandler;
-import org.killbill.billing.plugin.core.config.PluginEnvironmentConfig;
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
+import org.killbill.billing.plugin.vertex.client.CalculateTaxApi;
+import org.killbill.billing.plugin.vertex.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.osgi.framework.BundleContext;
 
 public class VertexActivator extends KillbillActivatorBase {
 
     public static final String PLUGIN_NAME = "killbill-vertex";
 
-    private VertexConfigPropertiesConfigurationHandler vertexConfigPropertiesConfigurationHandler;
+    private VertexTransactionApiConfigurationHandler vertexTransactionApiConfigurationHandler;
+    private VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler;
 
     @Override
     public void start(final BundleContext context) throws Exception {
         super.start(context);
 
-        final String region = PluginEnvironmentConfig.getRegion(configProperties.getProperties());
-        vertexConfigPropertiesConfigurationHandler = new VertexConfigPropertiesConfigurationHandler(PLUGIN_NAME,
-                                                                                                    killbillAPI,
-                                                                                                    logService,
-                                                                                                    region);
+        OAuthClient oAuthClient = new OAuthClient();
+        vertexTransactionApiConfigurationHandler = new VertexTransactionApiConfigurationHandler(PLUGIN_NAME,
+                                                                                                killbillAPI,
+                                                                                                oAuthClient);
+        vertexCalculateTaxApiConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(PLUGIN_NAME,
+                                                                                                  killbillAPI,
+                                                                                                  oAuthClient);
 
-        final VertexClient vertexClient = vertexConfigPropertiesConfigurationHandler.createConfigurable(configProperties.getProperties());
-        vertexConfigPropertiesConfigurationHandler.setDefaultConfigurable(vertexClient);
+        final TransactionApi vertexTransactionApiClient = vertexTransactionApiConfigurationHandler.createConfigurable(configProperties.getProperties());
+        vertexTransactionApiConfigurationHandler.setDefaultConfigurable(vertexTransactionApiClient);
+
+        final CalculateTaxApi vertexCalculateTaxApiClient = vertexCalculateTaxApiConfigurationHandler.createConfigurable(configProperties.getProperties());
+        vertexCalculateTaxApiConfigurationHandler.setDefaultConfigurable(vertexCalculateTaxApiClient);
 
         // Expose the healthcheck, so other plugins can check on the Vertex status
-        final VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(vertexConfigPropertiesConfigurationHandler);
+        final VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(vertexTransactionApiConfigurationHandler);
         registerHealthcheck(context, vertexHealthcheck);
 
         // Register the invoice plugin
-        final VertexInvoicePluginApi pluginApi = new VertexInvoicePluginApi(vertexConfigPropertiesConfigurationHandler,
+        final VertexInvoicePluginApi pluginApi = new VertexInvoicePluginApi(vertexCalculateTaxApiConfigurationHandler,
                                                                             killbillAPI,
                                                                             configProperties,
-                                                                            logService,
                                                                             clock.getClock());
         registerInvoicePluginApi(context, pluginApi);
 
         // Register the servlet
         final PluginApp pluginApp = new PluginAppBuilder(PLUGIN_NAME,
                                                          killbillAPI,
-                                                         logService,
                                                          dataSource,
                                                          super.clock,
                                                          configProperties).withRouteClass(VertexHealthcheckServlet.class)
@@ -81,7 +87,8 @@ public class VertexActivator extends KillbillActivatorBase {
     }
 
     public void registerHandlers() {
-        final PluginConfigurationEventHandler handler = new PluginConfigurationEventHandler(vertexConfigPropertiesConfigurationHandler);
+        final PluginConfigurationEventHandler handler = new PluginConfigurationEventHandler(vertexTransactionApiConfigurationHandler,
+                                                                                            vertexCalculateTaxApiConfigurationHandler);
         dispatcher.registerEventHandlers(handler);
     }
 
