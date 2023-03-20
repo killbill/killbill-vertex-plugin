@@ -60,7 +60,7 @@
             </properties>
         </database>
         <target>
-            <packageName>org.killbill.billing.plugin.vertex.dao.model</packageName>
+            <packageName>org.killbill.billing.plugin.vertex.gen.dao.model</packageName>
         </target>
     </generator>
 </configuration>
