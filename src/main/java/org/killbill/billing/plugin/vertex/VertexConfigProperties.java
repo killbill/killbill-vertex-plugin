@@ -24,4 +24,5 @@ public class VertexConfigProperties {
     public static final String VERTEX_OSERIES_URL_PROPERTY = PROPERTY_PREFIX + "url";
     public static final String VERTEX_OSERIES_CLIENT_ID_PROPERTY = PROPERTY_PREFIX + "clientId";
     public static final String VERTEX_OSERIES_CLIENT_SECRET_PROPERTY = PROPERTY_PREFIX + "clientSecret";
+    public static final String VERTEX_OAUTH_TOKEN = "VERTEX_OAUTH_TOKEN";
 }

@@ -21,7 +21,8 @@ import java.util.Properties;
 
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
-import org.killbill.billing.plugin.vertex.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.gen.ApiClient;
+import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;

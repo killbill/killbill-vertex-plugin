@@ -29,8 +29,8 @@ import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
 import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHandler;
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
-import org.killbill.billing.plugin.vertex.client.CalculateTaxApi;
-import org.killbill.billing.plugin.vertex.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
+import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.osgi.framework.BundleContext;
 
