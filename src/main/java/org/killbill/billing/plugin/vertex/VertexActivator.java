@@ -29,6 +29,7 @@ import org.killbill.billing.osgi.libs.killbill.KillbillActivatorBase;
 import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHandler;
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
+import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
 import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
@@ -44,6 +45,8 @@ public class VertexActivator extends KillbillActivatorBase {
     @Override
     public void start(final BundleContext context) throws Exception {
         super.start(context);
+
+        final VertexDao dao = new VertexDao(dataSource.getDataSource());
 
         OAuthClient oAuthClient = new OAuthClient();
         vertexTransactionApiConfigurationHandler = new VertexTransactionApiConfigurationHandler(PLUGIN_NAME,
@@ -67,6 +70,7 @@ public class VertexActivator extends KillbillActivatorBase {
         final VertexInvoicePluginApi pluginApi = new VertexInvoicePluginApi(vertexCalculateTaxApiConfigurationHandler,
                                                                             killbillAPI,
                                                                             configProperties,
+                                                                            dao,
                                                                             clock.getClock());
         registerInvoicePluginApi(context, pluginApi);
 
@@ -77,9 +81,9 @@ public class VertexActivator extends KillbillActivatorBase {
                                                          super.clock,
                                                          configProperties).withRouteClass(VertexHealthcheckServlet.class)
                                                                           .withService(vertexHealthcheck)
-                                                                          .withService(pluginApi)
-                                                                          .withService(clock)
+                                                                          .withService(dao)
                                                                           .build();
+
         final HttpServlet invoiceServlet = PluginApp.createServlet(pluginApp);
         registerServlet(context, invoiceServlet);
 
@@ -93,19 +97,19 @@ public class VertexActivator extends KillbillActivatorBase {
     }
 
     private void registerServlet(final BundleContext context, final HttpServlet servlet) {
-        final Hashtable<String, String> props = new Hashtable<String, String>();
+        final Hashtable<String, String> props = new Hashtable<>();
         props.put(OSGIPluginProperties.PLUGIN_NAME_PROP, PLUGIN_NAME);
         registrar.registerService(context, Servlet.class, servlet, props);
     }
 
     private void registerInvoicePluginApi(final BundleContext context, final InvoicePluginApi api) {
-        final Hashtable<String, String> props = new Hashtable<String, String>();
+        final Hashtable<String, String> props = new Hashtable<>();
         props.put(OSGIPluginProperties.PLUGIN_NAME_PROP, PLUGIN_NAME);
         registrar.registerService(context, InvoicePluginApi.class, api, props);
     }
 
-    private void registerHealthcheck(final BundleContext context, final VertexHealthcheck healthcheck) {
-        final Hashtable<String, String> props = new Hashtable<String, String>();
+    private void registerHealthcheck(final BundleContext context, final Healthcheck healthcheck) {
+        final Hashtable<String, String> props = new Hashtable<>();
         props.put(OSGIPluginProperties.PLUGIN_NAME_PROP, PLUGIN_NAME);
         registrar.registerService(context, Healthcheck.class, healthcheck, props);
     }

@@ -18,6 +18,7 @@
 package org.killbill.billing.plugin.vertex;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -34,6 +35,7 @@ import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
+import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
 import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
@@ -76,9 +78,10 @@ public class VertexTaxCalculator extends VertexCalculatorBase {
     private final VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler;
 
     public VertexTaxCalculator(final VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler,
+                               final VertexDao dao,
                                final Clock clock,
                                final OSGIKillbillAPI osgiKillbillAPI) {
-        super(clock, osgiKillbillAPI);
+        super(dao, clock, osgiKillbillAPI);
         this.vertexCalculateTaxApiConfigurationHandler = vertexCalculateTaxApiConfigurationHandler;
     }
 
@@ -93,7 +96,7 @@ public class VertexTaxCalculator extends VertexCalculatorBase {
                                                         final Iterable<PluginProperty> pluginProperties,
                                                         final UUID kbTenantId,
                                                         final Map<UUID, Iterable<InvoiceItem>> kbInvoiceItems,
-                                                        final LocalDate utcToday) throws ApiException {
+                                                        final LocalDate utcToday) throws ApiException, SQLException {
         final CalculateTaxApi calculateTaxApi = vertexCalculateTaxApiConfigurationHandler.getConfigurable(kbTenantId);
         final String companyCode = "how to get this"; //fixme calculateTaxApi.getCompanyCode();
 
@@ -111,9 +114,9 @@ public class VertexTaxCalculator extends VertexCalculatorBase {
         try {
             final ApiSuccessResponseTransactionResponseType taxResult = calculateTaxApi.salePost(taxRequest);
             logger.info("CreateTransaction res: {}", taxResult);
-          /*  if (!dryRun) { fixme
+            if (!dryRun) {
                 dao.addResponse(account.getId(), newInvoice.getId(), kbInvoiceItems, taxResult, clock.getUTCNow(), kbTenantId);
-            }*/
+            }
 
             if (taxResult.getData() == null || taxResult.getData().getLineItems() == null ||
                 taxResult.getData().getLineItems().isEmpty()) {
@@ -141,7 +144,7 @@ public class VertexTaxCalculator extends VertexCalculatorBase {
             return invoiceItems;
         } catch (final ApiException e) {
             if (e.getResponseBody() != null) {
-                //fixme  dao.addResponse(account.getId(), invoice.getId(), kbInvoiceItems, e.getErrors(), clock.getUTCNow(), kbTenantId);
+                dao.addResponse(account.getId(), invoice.getId(), kbInvoiceItems, e.getResponseBody(), clock.getUTCNow(), kbTenantId);
                 logger.warn("CreateTransaction res: {}", e.getResponseBody());
             }
             throw e;

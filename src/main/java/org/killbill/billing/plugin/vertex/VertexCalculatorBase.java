@@ -34,7 +34,9 @@ import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.invoice.PluginTaxCalculator;
+import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
+import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.killbill.clock.Clock;
 import org.slf4j.Logger;
@@ -48,12 +50,13 @@ public abstract class VertexCalculatorBase extends PluginTaxCalculator {
 
     private static final Logger logger = LoggerFactory.getLogger(VertexCalculatorBase.class);
 
-    //  protected final AvaTaxDao dao;
+    protected final VertexDao dao;
     protected final Clock clock;
 
-    protected VertexCalculatorBase(final Clock clock, final OSGIKillbillAPI osgiKillbillAPI) {
+    protected VertexCalculatorBase(final VertexDao dao, final Clock clock, final OSGIKillbillAPI osgiKillbillAPI) {
         super(osgiKillbillAPI);
         this.clock = clock;
+        this.dao = dao;
     }
 
     public List<InvoiceItem> compute(final Account account,
@@ -62,8 +65,8 @@ public abstract class VertexCalculatorBase extends PluginTaxCalculator {
                                      final Iterable<PluginProperty> pluginProperties,
                                      final TenantContext tenantContext) throws Exception {
         // Retrieve what we've already taxed (Tax Rates API) or sent (AvaTax)
-        // final List<AvataxResponsesRecord> responses = dao.getSuccessfulResponses(newInvoice.getId(), tenantContext.getTenantId());
-        final Map<UUID, Set<UUID>> alreadyTaxedItemsWithAdjustments = new HashMap<>();//fixme dao.getTaxedItemsWithAdjustments(responses);
+        final List<VertexResponsesRecord> responses = dao.getSuccessfulResponses(newInvoice.getId(), tenantContext.getTenantId());
+        final Map<UUID, Set<UUID>> alreadyTaxedItemsWithAdjustments = dao.getTaxedItemsWithAdjustments(responses);
 
         // For AvaTax, we can only send one type of document at a time (Sales or Return). In some cases, we need to send both, for example
         // in the case of repairs (adjustment for the original item, tax for the new item -- all generated items would be on the new invoice)
@@ -107,8 +110,8 @@ public abstract class VertexCalculatorBase extends PluginTaxCalculator {
                 adjustmentItems.put(itemToReturn.getTaxableItem().getId(), itemToReturn.getAdjustmentItems());
             }
 
-            // final List<AvataxResponsesRecord> responsesForInvoice = dao.getSuccessfulResponses(invoice.getId(), tenantContext.getTenantId());
-            final String originalInvoiceReferenceCode = null; // fixme responsesForInvoice.isEmpty() ? null : responsesForInvoice.get(0).getDocCode();
+            final List<VertexResponsesRecord> responsesForInvoice = dao.getSuccessfulResponses(invoice.getId(), tenantContext.getTenantId());
+            final String originalInvoiceReferenceCode = responsesForInvoice.isEmpty() ? null : responsesForInvoice.get(0).getDocCode();
 
             newInvoiceItemsBuilder.addAll(getTax(account,
                                                  newInvoice,
