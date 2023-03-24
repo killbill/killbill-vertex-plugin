@@ -33,6 +33,11 @@
       "description": "Changed Tax Area API"
     }
   ],
+  "security": [
+    {
+      "oauth2": []
+    }
+  ],
   "paths": {
     "/v2/supplies": {
       "post": {
@@ -3596,7 +3601,8 @@
         "enum": [
           "PURCHASE",
           "RENTAL",
-          "LEASE"
+          "LEASE",
+          "SALE"
         ]
       },
       "VendorCodeType": {
