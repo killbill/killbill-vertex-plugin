@@ -27,6 +27,7 @@ import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
 import org.killbill.billing.plugin.api.invoice.PluginInvoicePluginApi;
+import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.clock.Clock;
 
@@ -41,9 +42,9 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
     public VertexInvoicePluginApi(final VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler,
                                   final OSGIKillbillAPI killbillApi,
                                   final OSGIConfigPropertiesService configProperties,
-                                  final Clock clock) {
+                                  final VertexDao dao, final Clock clock) {
         super(killbillApi, configProperties, clock);
-        this.calculator = new VertexTaxCalculator(vertexCalculateTaxApiConfigurationHandler, clock, killbillApi);
+        this.calculator = new VertexTaxCalculator(vertexCalculateTaxApiConfigurationHandler, dao, clock, killbillApi);
     }
 
     @Override
