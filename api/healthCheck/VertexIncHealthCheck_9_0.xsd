@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--edited with XMLSpy v2017 rel. 3 sp1 (http://www.altova.com) by Vertex Inc. (Vertex Inc.)--><!--==================================================================--><!--Vertex Inc O Series Health Check Service XML Schema File--><!--==================================================================--><!--Schema author: Vertex Inc.
+Schema version: 9.0
+Schema date: 23 Jan 2019
+Copyright (C) Vertex Inc. (2016). All Rights Reserved.--><xsd:schema targetNamespace="urn:vertexinc:oseries:ws:healthcheck:9:0" elementFormDefault="qualified" attributeFormDefault="unqualified" version="1.0" jaxb:version="2.0" xmlns="urn:vertexinc:oseries:ws:healthcheck:9:0" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:jaxb="http://java.sun.com/xml/ns/jaxb">
+  <xsd:annotation>
+    <xsd:appinfo>
+      <jaxb:schemaBindings>
+        <jaxb:package name="com.vertexinc.ws.healthcheck.generated"/>
+      </jaxb:schemaBindings>
+    </xsd:appinfo>
+  </xsd:annotation>
+  <!--===============================================================-->
+  <!--===== Element Definitions =====-->
+  <!--===============================================================-->
+  <xsd:element name="PerformHealthCheckRequest">
+    <xsd:annotation>
+      <xsd:documentation>The PerformHealthCheckRequest message. This request message enables you to perform a health check asynchronously. This operation submits a global health check request and returns a response.</xsd:documentation>
+    </xsd:annotation>
+    <xsd:complexType>
+      <xsd:sequence>
+        <xsd:element name="Login" type="LoginType">
+          <xsd:annotation>
+            <xsd:documentation>An individual entering their credentials (UserName and Password) to access Vertex web services.</xsd:documentation>
+          </xsd:annotation>
+        </xsd:element>
+      </xsd:sequence>
+    </xsd:complexType>
+  </xsd:element>
+  <xsd:element name="PerformHealthCheckResponse" type="PerformHealthCheckResponseType">
+    <xsd:annotation>
+      <xsd:documentation>The PerformHealthCheckResponse message. This response message returns the following status messages:
+    1) The status message OK for each successful database connection to the O Series. If the database connection was unsuccessful, the PerformHealthCheckResponse returns the status message FAILED.
+    2) The status message OK to indicate that the Calculation Engine was successfully initialized. If the Calculation Engine was not successfully initialized, the PerformHealthCheckResponse message returns the status message FAILED.</xsd:documentation>
+    </xsd:annotation>
+  </xsd:element>
+  <xsd:element name="ServiceFault" type="ServiceFaultType">
+    <xsd:annotation>
+      <xsd:documentation>Additional details describing the SOAP Fault response.</xsd:documentation>
+    </xsd:annotation>
+  </xsd:element>
+  <!--===============================================================-->
+  <!--===== Type Definitions =====-->
+  <!--===============================================================-->
+  <xsd:complexType name="LoginType">
+    <xsd:sequence>
+      <xsd:element name="UserName">
+        <xsd:annotation>
+          <xsd:documentation>The name of the individual initiating the login that identifies a valid user.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:maxLength value="64"/>
+            <xsd:minLength value="1"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+      <xsd:element name="Password">
+        <xsd:annotation>
+          <xsd:documentation>The authorized password associated with the UserName that authenticates a valid user.</xsd:documentation>
+        </xsd:annotation>
+        <xsd:simpleType>
+          <xsd:restriction base="xsd:string">
+            <xsd:maxLength value="64"/>
+            <xsd:minLength value="1"/>
+          </xsd:restriction>
+        </xsd:simpleType>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="PerformHealthCheckResponseType">
+    <xsd:sequence>
+      <xsd:element name="CalcEngine" type="xsd:string">
+        <xsd:annotation>
+          <xsd:documentation>This attribute indicates whether a Calculation Engine is running. If the Calculation Engine is initialized successfully, the PerformHealthCheckResponse message returns the status message OK. If the Calculation Engine is not initialized successfully, the PerformHealthCheckResponse message returns the status message FAILED.</xsd:documentation>
+        </xsd:annotation>
+      </xsd:element>
+      <xsd:element name="Database" type="DatabaseType" minOccurs="1" maxOccurs="unbounded">
+        <xsd:annotation>
+          <xsd:documentation>This attribute indicates whether an O Series database is connected successfully. The PerformHealthCheckResponse message returns a status message of OK or FAILED for each database. The status of the following O Series databases are returned: TPS, RTE, UTIL, Journal, Reporting, and TaxGIS.</xsd:documentation>
+        </xsd:annotation>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+  <xsd:complexType name="DatabaseType">
+    <xsd:simpleContent>
+      <xsd:extension base="xsd:string">
+        <xsd:attribute name="name" type="xsd:string">
+          <xsd:annotation>
+            <xsd:documentation>The attribute for each O Series database name, which include: TPS, RTE, UTIL, Journal, Reporting, and TaxGIS.</xsd:documentation>
+          </xsd:annotation>
+        </xsd:attribute>
+      </xsd:extension>
+    </xsd:simpleContent>
+  </xsd:complexType>
+  <xsd:complexType name="ServiceFaultType">
+    <xsd:sequence>
+      <xsd:element name="FaultInfo" type="xsd:string">
+        <xsd:annotation>
+          <xsd:documentation>The error exception class name.</xsd:documentation>
+        </xsd:annotation>
+      </xsd:element>
+      <xsd:element name="Message" type="xsd:string">
+        <xsd:annotation>
+          <xsd:documentation>The error message of the exception.</xsd:documentation>
+        </xsd:annotation>
+      </xsd:element>
+    </xsd:sequence>
+  </xsd:complexType>
+</xsd:schema>

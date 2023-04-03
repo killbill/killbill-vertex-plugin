@@ -32,7 +32,9 @@ import org.testng.annotations.BeforeSuite;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_PASSWORD;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_SKIP;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_USERNAME;
 
 public abstract class VertexRemoteTestBase {
 
@@ -40,6 +42,12 @@ public abstract class VertexRemoteTestBase {
     // See README.md for details on the required properties
     private static final String VERTEX_PROPERTIES = "vertex.properties";
 
+    protected String url;
+    protected String clientId;
+    protected String clientSecret;
+    protected String username;
+    protected String password;
+    protected Properties properties;
     protected CalculateTaxApi calculateTaxApi;
     protected VertexDao dao;
 
@@ -65,9 +73,17 @@ public abstract class VertexRemoteTestBase {
             properties.put(VERTEX_OSERIES_CLIENT_ID_PROPERTY, System.getenv("VERTEX_CLIENT_ID"));
             properties.put(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY, System.getenv("VERTEX_SECRET_ID"));
             properties.put(VERTEX_SKIP, System.getenv(VERTEX_SKIP));
+            properties.put(VERTEX_USERNAME, System.getenv(VERTEX_USERNAME));
+            properties.put(VERTEX_PASSWORD, System.getenv(VERTEX_PASSWORD));
         }
 
-        buildCalculateTaxApi(properties);
+        this.url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
+        this.clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
+        this.clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
+        this.username = properties.getProperty(VERTEX_USERNAME);
+        this.password = properties.getProperty(VERTEX_PASSWORD);
+        this.properties = properties;
+        buildCalculateTaxApi(url, clientId, clientSecret);
     }
 
     @AfterSuite(groups = {"slow", "integration"})
@@ -75,11 +91,7 @@ public abstract class VertexRemoteTestBase {
         EmbeddedDbHelper.instance().stopDB();
     }
 
-    private void buildCalculateTaxApi(final Properties properties) {
-        String url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
-        String clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
-        String clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
-
+    private void buildCalculateTaxApi(final String url, final String clientId, final String clientSecret) {
         OAuthClient oAuthClient = new OAuthClient();
 
         ApiClient apiClient = new ApiClient();

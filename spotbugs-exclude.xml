@@ -21,6 +21,10 @@
         <Package name="~org\.killbill\.billing\.plugin\.vertex\.gen.*"/>
     </Match>
     <Match>
+        <!-- Ignore checking for generated classes -->
+        <Package name="~com\.vertexinc\.ws\.healthcheck\.generated.*"/>
+    </Match>
+    <Match>
         <Method name="&lt;init&gt;"/>
         <Bug pattern="EI_EXPOSE_REP2" />
     </Match>

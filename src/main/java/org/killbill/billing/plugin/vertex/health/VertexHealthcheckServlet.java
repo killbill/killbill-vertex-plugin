@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package org.killbill.billing.plugin.vertex;
+package org.killbill.billing.plugin.vertex.health;
 
 import java.util.Optional;
 

@@ -21,6 +21,8 @@ public class VertexConfigProperties {
 
     public static final String PROPERTY_PREFIX = "org.killbill.billing.plugin.vertex.";
     public static final String VERTEX_SKIP = "VERTEX_SKIP";
+    public static final String VERTEX_USERNAME = "VERTEX_USERNAME";
+    public static final String VERTEX_PASSWORD = "VERTEX_PASSWORD";
     public static final String VERTEX_OSERIES_URL_PROPERTY = PROPERTY_PREFIX + "url";
     public static final String VERTEX_OSERIES_CLIENT_ID_PROPERTY = PROPERTY_PREFIX + "clientId";
     public static final String VERTEX_OSERIES_CLIENT_SECRET_PROPERTY = PROPERTY_PREFIX + "clientSecret";

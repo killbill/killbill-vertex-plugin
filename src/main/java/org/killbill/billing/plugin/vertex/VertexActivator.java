@@ -32,6 +32,10 @@ import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
 import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
+import org.killbill.billing.plugin.vertex.health.HealthCheckApiConfigurationHandler;
+import org.killbill.billing.plugin.vertex.health.VertexHealthcheck;
+import org.killbill.billing.plugin.vertex.health.VertexHealthcheckServlet;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.osgi.framework.BundleContext;
 
@@ -41,6 +45,7 @@ public class VertexActivator extends KillbillActivatorBase {
 
     private VertexTransactionApiConfigurationHandler vertexTransactionApiConfigurationHandler;
     private VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler;
+    private HealthCheckApiConfigurationHandler healthCheckApiConfigurationHandler;
 
     @Override
     public void start(final BundleContext context) throws Exception {
@@ -55,6 +60,8 @@ public class VertexActivator extends KillbillActivatorBase {
         vertexCalculateTaxApiConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(PLUGIN_NAME,
                                                                                                   killbillAPI,
                                                                                                   oAuthClient);
+        healthCheckApiConfigurationHandler = new HealthCheckApiConfigurationHandler(PLUGIN_NAME,
+                                                                                    killbillAPI);
 
         final TransactionApi vertexTransactionApiClient = vertexTransactionApiConfigurationHandler.createConfigurable(configProperties.getProperties());
         vertexTransactionApiConfigurationHandler.setDefaultConfigurable(vertexTransactionApiClient);
@@ -62,8 +69,11 @@ public class VertexActivator extends KillbillActivatorBase {
         final CalculateTaxApi vertexCalculateTaxApiClient = vertexCalculateTaxApiConfigurationHandler.createConfigurable(configProperties.getProperties());
         vertexCalculateTaxApiConfigurationHandler.setDefaultConfigurable(vertexCalculateTaxApiClient);
 
+        final HealthCheckService healthCheckService = healthCheckApiConfigurationHandler.createConfigurable(configProperties.getProperties());
+        healthCheckApiConfigurationHandler.setDefaultConfigurable(healthCheckService);
+
         // Expose the healthcheck, so other plugins can check on the Vertex status
-        final VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(vertexTransactionApiConfigurationHandler);
+        final VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(healthCheckApiConfigurationHandler);
         registerHealthcheck(context, vertexHealthcheck);
 
         // Register the invoice plugin
