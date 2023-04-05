@@ -16,11 +16,12 @@
  * under the License.
  */
 
-package org.killbill.billing.plugin.vertex;
+package org.killbill.billing.plugin.vertex.base;
 
 import java.util.Properties;
 
 import org.killbill.billing.plugin.TestUtils;
+import org.killbill.billing.plugin.vertex.EmbeddedDbHelper;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
 import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;

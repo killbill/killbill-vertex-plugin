@@ -18,7 +18,7 @@
 package org.killbill.billing.plugin.vertex.health;
 
 import org.killbill.billing.osgi.api.Healthcheck.HealthStatus;
-import org.killbill.billing.plugin.vertex.VertexRemoteTestBase;
+import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 import org.killbill.billing.tenant.api.Tenant;
 import org.killbill.billing.tenant.api.boilerplate.TenantImp;
