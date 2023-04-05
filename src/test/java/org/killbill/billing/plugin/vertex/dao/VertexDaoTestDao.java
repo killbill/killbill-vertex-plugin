@@ -32,7 +32,7 @@ import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.api.InvoiceItemType;
 import org.killbill.billing.plugin.TestUtils;
-import org.killbill.billing.plugin.vertex.VertexRemoteTestBase;
+import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseTypeData;
 import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;

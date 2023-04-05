@@ -17,7 +17,7 @@
 
 package org.killbill.billing.plugin.vertex.oauth;
 
-import org.killbill.billing.plugin.vertex.VertexRemoteTestBase;
+import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 

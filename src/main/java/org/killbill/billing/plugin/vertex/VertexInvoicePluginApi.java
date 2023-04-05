@@ -57,7 +57,7 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
                                   final OSGIConfigPropertiesService configProperties,
                                   final VertexDao dao, final Clock clock) {
         super(killbillApi, configProperties, clock);
-        this.calculator = new VertexTaxCalculator(vertexCalculateTaxApiConfigurationHandler, dao, clock, killbillApi, configProperties.getProperties());
+        this.calculator = new VertexTaxCalculator(vertexCalculateTaxApiConfigurationHandler, dao, clock, killbillApi);
     }
 
     @Override
@@ -101,8 +101,8 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
         final Iterable<CustomField> taxCodeCustomFieldsForInvoiceItems = customFields
                 .stream().filter(customField -> customField != null &&
-                                                VertexTaxCalculator.TAX_CODE.equals(customField.getFieldName()) &&
-                                                invoiceItemIds.contains(customField.getObjectId())).collect(Collectors.toList());
+                        VertexTaxCalculator.TAX_CODE.equals(customField.getFieldName()) &&
+                        invoiceItemIds.contains(customField.getObjectId())).collect(Collectors.toList());
         for (final CustomField customField : taxCodeCustomFieldsForInvoiceItems) {
             final UUID invoiceItemId = customField.getObjectId();
             final String taxCode = customField.getFieldValue();
