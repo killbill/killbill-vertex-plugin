@@ -20,13 +20,27 @@ package org.killbill.billing.plugin.vertex;
 public class VertexConfigProperties {
 
     public static final String PROPERTY_PREFIX = "org.killbill.billing.plugin.vertex.";
-    public static final String VERTEX_SKIP = "VERTEX_SKIP";
-    public static final String VERTEX_USERNAME = "VERTEX_USERNAME";
-    public static final String VERTEX_PASSWORD = "VERTEX_PASSWORD";
+
+    /**
+     * Required parameter
+     */
     public static final String VERTEX_OSERIES_URL_PROPERTY = PROPERTY_PREFIX + "url";
+
+    /**
+     * Required parameters for Vertex tax api
+     */
     public static final String VERTEX_OSERIES_CLIENT_ID_PROPERTY = PROPERTY_PREFIX + "clientId";
     public static final String VERTEX_OSERIES_CLIENT_SECRET_PROPERTY = PROPERTY_PREFIX + "clientSecret";
+
+    /**
+     * Required parameters for Vertex healthcheck api
+     */
+    public static final String VERTEX_OSERIES_USERNAME_PROPERTY = PROPERTY_PREFIX + "username";
+    public static final String VERTEX_OSERIES_PASSWORD_PROPERTY = PROPERTY_PREFIX + "password";
+
+    /**
+     * Optional parameters
+     */
     public static final String VERTEX_OSERIES_COMPANY_NAME_PROPERTY = PROPERTY_PREFIX + "companyName";
     public static final String VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY = PROPERTY_PREFIX + "companyDivision";
-    public static final String VERTEX_OAUTH_TOKEN = "VERTEX_OAUTH_TOKEN";
 }

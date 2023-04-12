@@ -17,16 +17,22 @@
 
 package org.killbill.billing.plugin.vertex.health;
 
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
 
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
+import org.killbill.billing.plugin.vertex.client.VertexHealthcheckClient;
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_PASSWORD_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_USERNAME_PROPERTY;
 
-public class HealthCheckApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<HealthCheckService> {
+public class HealthCheckApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<VertexHealthcheckClient> {
+
+    private final String HEALTHCHECK_PATH = "/vertex-ws/adminservices/HealthCheck90";
 
     public HealthCheckApiConfigurationHandler(final String pluginName,
                                               final OSGIKillbillAPI osgiKillbillAPI) {
@@ -34,13 +40,18 @@ public class HealthCheckApiConfigurationHandler extends PluginTenantConfigurable
     }
 
     @Override
-    public HealthCheckService createConfigurable(final Properties properties) {
-        try {
-            String url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
+    public VertexHealthcheckClient createConfigurable(final Properties properties) {
+        String url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
+        String username = properties.getProperty(VERTEX_OSERIES_USERNAME_PROPERTY);
+        String password = properties.getProperty(VERTEX_OSERIES_PASSWORD_PROPERTY);
 
-            return new HealthCheckService(new URL(url + "/vertex-ws/adminservices/HealthCheck90"));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        HealthCheckService healthCheckService;
+        try {
+            healthCheckService = new HealthCheckService(new URL(url + HEALTHCHECK_PATH));
+        } catch (MalformedURLException e) {
+            throw new IllegalStateException(e);
         }
+
+        return new VertexHealthcheckClient(healthCheckService, username, password);
     }
 }

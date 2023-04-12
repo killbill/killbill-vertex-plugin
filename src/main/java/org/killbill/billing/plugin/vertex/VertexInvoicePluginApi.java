@@ -46,8 +46,6 @@ import org.killbill.clock.Clock;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_SKIP;
-
 public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
     private final VertexTaxCalculator calculator;
@@ -65,11 +63,11 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
                                                        final boolean dryRun,
                                                        final Iterable<PluginProperty> properties,
                                                        final CallContext context) {
-        final Collection<PluginProperty> pluginProperties = Lists.newArrayList(properties);
-
-        if (PluginProperties.findPluginPropertyValue(VERTEX_SKIP, pluginProperties) != null) {
+        if (PluginProperties.findPluginPropertyValue("VERTEX_SKIP", properties) != null) {
             return ImmutableList.of();
         }
+
+        final Collection<PluginProperty> pluginProperties = Lists.newArrayList(properties);
 
         final Account account = getAccount(invoice.getAccountId(), context);
 
