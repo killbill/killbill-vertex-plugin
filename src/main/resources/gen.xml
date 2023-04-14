@@ -55,7 +55,7 @@
                      - lower: unquoted object names are turned into lower case (e.g. PostgreSQL) -->
                 <property>
                     <key>defaultNameCase</key>
-                    <value>as_is</value>
+                    <value>lower</value>
                 </property>
             </properties>
         </database>
