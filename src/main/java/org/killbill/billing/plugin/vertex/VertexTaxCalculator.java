@@ -291,8 +291,12 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         taxRequest.setTransactionType(SaleTransactionTypeEnum.SALE);
 
         // We overload this field to keep a mapping with the Kill Bill invoice
-        taxRequest.setTransactionId(invoice.getId().toString());
-        taxRequest.setDocumentNumber(invoice.getInvoiceNumber().toString());
+        taxRequest.setTransactionId(UUID.randomUUID().toString());
+
+        // Considering there could be multiple documents for same invoice, using random string in addition to invoice_id
+        String docNumber = String.format("%s_%s", invoice.getId().toString(), UUID.randomUUID().toString().substring(0, 12));
+        taxRequest.setDocumentNumber(docNumber);
+
         taxRequest.setDocumentDate(java.time.LocalDate.of(invoice.getInvoiceDate().getYear(), invoice.getInvoiceDate().getMonthOfYear(), invoice.getInvoiceDate().getDayOfMonth()));
         taxRequest.setPostingDate(java.time.LocalDate.of(utcToday.getYear(), utcToday.getMonthOfYear(), utcToday.getDayOfMonth()));//fixme is this ok?
 
