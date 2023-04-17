@@ -285,7 +285,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         if (dryRun) {
             taxRequest.setSaleMessageType(SaleMessageTypeEnum.QUOTATION);
         } else {
-            taxRequest.setSaleMessageType(originalInvoiceReferenceCode == null ? SaleMessageTypeEnum.INVOICE : SaleMessageTypeEnum.DISTRIBUTE_TAX);
+            taxRequest.setSaleMessageType(SaleMessageTypeEnum.INVOICE);
         }
 
         taxRequest.setTransactionType(SaleTransactionTypeEnum.SALE);

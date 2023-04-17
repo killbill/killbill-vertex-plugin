@@ -64,7 +64,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
 
         pluginProperties = new LinkedList<>();
         pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, "328", false));
-        pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, "Kill Bill Parent", false));
+        pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY, "Kill Bill Parent", false));
 
         // California Nexus must be enabled in your account for the test to pass
         // As of July 2021, tax rates are:
