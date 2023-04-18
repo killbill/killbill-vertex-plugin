@@ -21,34 +21,15 @@ import java.util.Properties;
 
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
-import org.killbill.billing.plugin.vertex.gen.ApiClient;
-import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
-import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
+public class VertexCalculateTaxApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<VertexApiClient> {
 
-public class VertexCalculateTaxApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<CalculateTaxApi> {
-
-    private final OAuthClient oAuthClient;
-
-    public VertexCalculateTaxApiConfigurationHandler(final String pluginName,
-                                                     final OSGIKillbillAPI osgiKillbillAPI, final OAuthClient oAuthClient) {
+    public VertexCalculateTaxApiConfigurationHandler(final String pluginName, final OSGIKillbillAPI osgiKillbillAPI) {
         super(pluginName, osgiKillbillAPI);
-        this.oAuthClient = oAuthClient;
     }
 
     @Override
-    protected CalculateTaxApi createConfigurable(final Properties properties) {
-        String url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
-        String clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
-        String clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
-
-        ApiClient apiClient = new ApiClient();
-        apiClient.setBasePath(url + "/vertex-ws/");
-        String token = oAuthClient.getToken(url, clientId, clientSecret).getAccessToken();
-        apiClient.setAccessToken(token);
-        return new CalculateTaxApi(apiClient);
+    protected VertexApiClient createConfigurable(final Properties properties) {
+        return new VertexApiClient(properties);
     }
 }

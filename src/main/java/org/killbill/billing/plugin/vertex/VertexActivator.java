@@ -30,7 +30,6 @@ import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHand
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
-import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
 import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 import org.killbill.billing.plugin.vertex.health.HealthCheckApiConfigurationHandler;
@@ -54,19 +53,14 @@ public class VertexActivator extends KillbillActivatorBase {
         final VertexDao dao = new VertexDao(dataSource.getDataSource());
 
         OAuthClient oAuthClient = new OAuthClient();
-        vertexTransactionApiConfigurationHandler = new VertexTransactionApiConfigurationHandler(PLUGIN_NAME,
-                                                                                                killbillAPI,
-                                                                                                oAuthClient);
-        vertexCalculateTaxApiConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(PLUGIN_NAME,
-                                                                                                  killbillAPI,
-                                                                                                  oAuthClient);
-        healthCheckApiConfigurationHandler = new HealthCheckApiConfigurationHandler(PLUGIN_NAME,
-                                                                                    killbillAPI);
+        vertexTransactionApiConfigurationHandler = new VertexTransactionApiConfigurationHandler(PLUGIN_NAME, killbillAPI, oAuthClient);
+        vertexCalculateTaxApiConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(PLUGIN_NAME, killbillAPI);
+        healthCheckApiConfigurationHandler = new HealthCheckApiConfigurationHandler(PLUGIN_NAME, killbillAPI);
 
         final TransactionApi vertexTransactionApiClient = vertexTransactionApiConfigurationHandler.createConfigurable(configProperties.getProperties());
         vertexTransactionApiConfigurationHandler.setDefaultConfigurable(vertexTransactionApiClient);
 
-        final CalculateTaxApi vertexCalculateTaxApiClient = vertexCalculateTaxApiConfigurationHandler.createConfigurable(configProperties.getProperties());
+        final VertexApiClient vertexCalculateTaxApiClient = vertexCalculateTaxApiConfigurationHandler.createConfigurable(configProperties.getProperties());
         vertexCalculateTaxApiConfigurationHandler.setDefaultConfigurable(vertexCalculateTaxApiClient);
 
         final HealthCheckService healthCheckService = healthCheckApiConfigurationHandler.createConfigurable(configProperties.getProperties());
