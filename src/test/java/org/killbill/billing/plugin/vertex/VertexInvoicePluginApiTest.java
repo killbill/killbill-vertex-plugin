@@ -17,6 +17,12 @@
 
 package org.killbill.billing.plugin.vertex;
 
+import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.UUID;
+
 import org.killbill.billing.account.api.Account;
 import org.killbill.billing.catalog.api.CatalogApiException;
 import org.killbill.billing.catalog.api.CatalogUserApi;
@@ -32,7 +38,6 @@ import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.TestUtils;
 import org.killbill.billing.plugin.api.PluginCallContext;
 import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
-import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.killbill.billing.util.api.CustomFieldUserApi;
 import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.clock.Clock;
@@ -42,12 +47,6 @@ import org.osgi.framework.BundleContext;
 import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
-
-import java.math.BigDecimal;
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.UUID;
 
 // Note: the test assumes all California authorities are set up to collect sales and use tax (270+)
 public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
@@ -91,9 +90,8 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
     public void testItemAdjustments() {
 
         final Clock clock = new DefaultClock();
-        final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME,
-                osgiKillbillAPI, new OAuthClient());
-        avaTaxConfigurationHandler.setDefaultConfigurable(calculateTaxApi);
+        final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
+        avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
                 osgiKillbillAPI,
                 new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
@@ -182,9 +180,8 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
     public void testRepair() throws Exception {
 
         final Clock clock = new DefaultClock();
-        final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME,
-                osgiKillbillAPI, new OAuthClient());
-        avaTaxConfigurationHandler.setDefaultConfigurable(calculateTaxApi);
+        final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
+        avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
                 osgiKillbillAPI,
                 new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
