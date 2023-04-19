@@ -22,9 +22,9 @@ import java.util.Properties;
 
 import org.killbill.billing.plugin.TestUtils;
 import org.killbill.billing.plugin.vertex.EmbeddedDbHelper;
+import org.killbill.billing.plugin.vertex.VertexApiClient;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
-import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
@@ -32,25 +32,28 @@ import org.testng.annotations.BeforeSuite;
 
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_PASSWORD;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_SKIP;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_USERNAME;
 
 public abstract class VertexRemoteTestBase {
-
     // To run these tests, you need a properties file in the classpath (e.g. src/test/resources/vertex.properties)
     // See README.md for details on the required properties
     private static final String VERTEX_PROPERTIES = "vertex.properties";
+    protected Properties properties;
+
+    protected VertexApiClient vertexApiClient;
+    protected VertexDao dao;
 
     protected String url;
     protected String clientId;
     protected String clientSecret;
     protected String username;
     protected String password;
-    protected Properties properties;
-    protected CalculateTaxApi calculateTaxApi;
-    protected VertexDao dao;
+    protected String companyName;
+    protected String companyDivision;
 
     @BeforeSuite(groups = {"slow", "integration"})
     public void setUpBeforeSuite() throws Exception {
@@ -73,7 +76,10 @@ public abstract class VertexRemoteTestBase {
             properties.put(VERTEX_OSERIES_URL_PROPERTY, System.getenv("VERTEX_URL"));
             properties.put(VERTEX_OSERIES_CLIENT_ID_PROPERTY, System.getenv("VERTEX_CLIENT_ID"));
             properties.put(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY, System.getenv("VERTEX_SECRET_ID"));
-            properties.put(VERTEX_SKIP, System.getenv(VERTEX_SKIP));
+
+            properties.put(VERTEX_OSERIES_COMPANY_NAME_PROPERTY, System.getenv("VERTEX_COMPANY_NAME"));
+            properties.put(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, System.getenv("VERTEX_COMPANY_DIVISION"));
+
             properties.put(VERTEX_USERNAME, System.getenv(VERTEX_USERNAME));
             properties.put(VERTEX_PASSWORD, System.getenv(VERTEX_PASSWORD));
         }
@@ -81,10 +87,16 @@ public abstract class VertexRemoteTestBase {
         this.url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
         this.clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
         this.clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
+
+        //fixme: do we need this properties duplication?
+        this.companyName = properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY);
+        this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
         this.username = properties.getProperty(VERTEX_USERNAME);
         this.password = properties.getProperty(VERTEX_PASSWORD);
+
         this.properties = properties;
-        buildCalculateTaxApi(url, clientId, clientSecret);
+
+        buildVertexApiClient(properties);
     }
 
     @AfterSuite(groups = {"slow", "integration"})
@@ -92,14 +104,15 @@ public abstract class VertexRemoteTestBase {
         EmbeddedDbHelper.instance().stopDB();
     }
 
-    private void buildCalculateTaxApi(final String url, final String clientId, final String clientSecret) {
+    private void buildVertexApiClient(Properties properties) {
         OAuthClient oAuthClient = new OAuthClient();
 
         ApiClient apiClient = new ApiClient();
         apiClient.setBasePath(url + "/vertex-ws/");
         String token = oAuthClient.getToken(url, clientId, clientSecret).getAccessToken();
         apiClient.setAccessToken(token);
-        calculateTaxApi = new CalculateTaxApi(apiClient);
+
+        this.vertexApiClient = new VertexApiClient(properties);
     }
 
 }

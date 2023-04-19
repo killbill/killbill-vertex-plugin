@@ -101,8 +101,8 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
         final Iterable<CustomField> taxCodeCustomFieldsForInvoiceItems = customFields
                 .stream().filter(customField -> customField != null &&
-                        VertexTaxCalculator.TAX_CODE.equals(customField.getFieldName()) &&
-                        invoiceItemIds.contains(customField.getObjectId())).collect(Collectors.toList());
+                                                VertexTaxCalculator.TAX_CODE.equals(customField.getFieldName()) &&
+                                                invoiceItemIds.contains(customField.getObjectId())).collect(Collectors.toList());
         for (final CustomField customField : taxCodeCustomFieldsForInvoiceItems) {
             final UUID invoiceItemId = customField.getObjectId();
             final String taxCode = customField.getFieldValue();
