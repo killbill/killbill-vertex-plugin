@@ -44,7 +44,6 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.*;
 
-
 public class VertexTaxCalculator extends PluginTaxCalculator {
 
     public static final String TAX_CODE = "taxCode";
