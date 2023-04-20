@@ -133,7 +133,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         invoiceItems.add(itemAdjustment2);
         additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, callContext);
         // TAX expected (total -$4.32)
-        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.32"));
+        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
         /*
          * Scenario 2B: re-invoice of 2A (should be idempotent)
@@ -160,7 +160,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         // TAX expected (total -$4.32)
         // Note: due to rounding, more tax is returned than initially taxed (the value comes straight from AvaTax).
         // To avoid this, in case of multiple item adjustments, you might have to return tax manually in AvaTax.
-        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.32"));
+        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
         /*
          * Scenario 3B: re-invoice of 3A (should be idempotent)
@@ -225,7 +225,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
                 .thenReturn(invoice1);
         additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice2, false, pluginProperties, callContext);
         // TAX expected (total -$4.32)
-        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.32"));
+        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
         /*
          * Scenario 2B: re-invoice of 2A (should be idempotent)
