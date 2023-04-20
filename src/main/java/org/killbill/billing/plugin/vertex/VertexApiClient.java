@@ -33,6 +33,7 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
 
 public class VertexApiClient {
+
     private final OAuthClient oAuthClient;
     private final CalculateTaxApi calculateTaxApi;
     private final String companyName;

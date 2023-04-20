@@ -39,6 +39,7 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_P
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_USERNAME;
 
 public abstract class VertexRemoteTestBase {
+
     // To run these tests, you need a properties file in the classpath (e.g. src/test/resources/vertex.properties)
     // See README.md for details on the required properties
     private static final String VERTEX_PROPERTIES = "vertex.properties";
