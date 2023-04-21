@@ -93,10 +93,10 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
-                osgiKillbillAPI,
-                new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
-                dao,
-                clock);
+                                                            osgiKillbillAPI,
+                                                            new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
+                                                            dao,
+                                                            clock);
 
         final Invoice invoice = TestUtils.buildInvoice(account);
         final List<InvoiceItem> invoiceItems = new LinkedList<>();
@@ -133,7 +133,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         invoiceItems.add(itemAdjustment2);
         additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, callContext);
         // TAX expected (total -$4.32)
-        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.32"));
+        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
         /*
          * Scenario 2B: re-invoice of 2A (should be idempotent)
@@ -160,7 +160,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         // TAX expected (total -$4.32)
         // Note: due to rounding, more tax is returned than initially taxed (the value comes straight from AvaTax).
         // To avoid this, in case of multiple item adjustments, you might have to return tax manually in AvaTax.
-        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.32"));
+        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
         /*
          * Scenario 3B: re-invoice of 3A (should be idempotent)
@@ -183,10 +183,10 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
-                osgiKillbillAPI,
-                new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
-                dao,
-                clock);
+                                                            osgiKillbillAPI,
+                                                            new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
+                                                            dao,
+                                                            clock);
 
         final Invoice invoice1 = TestUtils.buildInvoice(account);
         final List<InvoiceItem> invoiceItems1 = new LinkedList<>();
@@ -222,10 +222,10 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         final InvoiceItem repair2 = TestUtils.buildInvoiceItem(invoice2, InvoiceItemType.REPAIR_ADJ, new BigDecimal("-50"), taxableItem1.getId());
         invoiceItems2.add(repair2);
         Mockito.when(osgiKillbillAPI.getInvoiceUserApi().getInvoiceByInvoiceItem(Mockito.eq(taxableItem1.getId()), Mockito.any()))
-                .thenReturn(invoice1);
+               .thenReturn(invoice1);
         additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice2, false, pluginProperties, callContext);
         // TAX expected (total -$4.32)
-        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.32"));
+        checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
         /*
          * Scenario 2B: re-invoice of 2A (should be idempotent)

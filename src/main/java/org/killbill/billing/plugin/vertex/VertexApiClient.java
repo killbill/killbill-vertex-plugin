@@ -20,7 +20,10 @@ package org.killbill.billing.plugin.vertex;
 import java.util.Properties;
 
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
+import org.killbill.billing.plugin.vertex.gen.ApiException;
 import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
+import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
+import org.killbill.billing.plugin.vertex.gen.client.model.SaleRequestType;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;
@@ -30,6 +33,7 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
 
 public class VertexApiClient {
+
     private final OAuthClient oAuthClient;
     private final CalculateTaxApi calculateTaxApi;
     private final String companyName;
@@ -55,8 +59,8 @@ public class VertexApiClient {
         return companyDivision;
     }
 
-    public CalculateTaxApi getCalculateTaxApi() {
-        return calculateTaxApi;
+    public ApiSuccessResponseTransactionResponseType calculateTaxes(SaleRequestType taxRequest) throws ApiException {
+        return calculateTaxApi.salePost(taxRequest);
     }
 
     private CalculateTaxApi initApiClient(final String url, final String clientId, final String clientSecret) {

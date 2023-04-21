@@ -67,7 +67,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Multimap;
 
-
 public class VertexTaxCalculator extends PluginTaxCalculator {
 
     public static final String TAX_CODE = "taxCode";
@@ -225,7 +224,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         logger.info("CreateTransaction req: {}", taxRequest);
 
         try {
-            final ApiSuccessResponseTransactionResponseType taxResult = vertexApiClient.getCalculateTaxApi().salePost(taxRequest);
+            final ApiSuccessResponseTransactionResponseType taxResult = vertexApiClient.calculateTaxes(taxRequest);
             logger.info("CreateTransaction res: {}", taxResult);
             if (!dryRun) {
                 dao.addResponse(account.getId(), newInvoice.getId(), kbInvoiceItems, taxResult, clock.getUTCNow(), kbTenantId);
