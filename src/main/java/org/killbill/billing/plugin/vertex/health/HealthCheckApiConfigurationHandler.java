@@ -21,9 +21,12 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Properties;
 
+import org.jooq.tools.StringUtils;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
+import org.killbill.billing.plugin.vertex.client.NotConfiguredVertexHealthcheckClient;
 import org.killbill.billing.plugin.vertex.client.VertexHealthcheckClient;
+import org.killbill.billing.plugin.vertex.client.VertexHealthcheckClientImpl;
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_PASSWORD_PROPERTY;
@@ -45,6 +48,10 @@ public class HealthCheckApiConfigurationHandler extends PluginTenantConfigurable
         String username = properties.getProperty(VERTEX_OSERIES_USERNAME_PROPERTY);
         String password = properties.getProperty(VERTEX_OSERIES_PASSWORD_PROPERTY);
 
+        if (StringUtils.isBlank(url) || StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
+            return new NotConfiguredVertexHealthcheckClient();
+        }
+
         HealthCheckService healthCheckService;
         try {
             healthCheckService = new HealthCheckService(new URL(url + HEALTHCHECK_PATH));
@@ -52,6 +59,6 @@ public class HealthCheckApiConfigurationHandler extends PluginTenantConfigurable
             throw new IllegalStateException(e);
         }
 
-        return new VertexHealthcheckClient(healthCheckService, username, password);
+        return new VertexHealthcheckClientImpl(healthCheckService, username, password);
     }
 }

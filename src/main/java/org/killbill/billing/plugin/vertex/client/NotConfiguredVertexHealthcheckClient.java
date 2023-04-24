@@ -17,12 +17,5 @@
 
 package org.killbill.billing.plugin.vertex.client;
 
-import org.killbill.billing.plugin.vertex.gen.health.HealthCheckException;
-import org.killbill.billing.plugin.vertex.gen.health.PerformHealthCheckResponseType;
-
-public interface VertexHealthcheckClient {
-
-    default PerformHealthCheckResponseType healthCheck() throws HealthCheckException {
-        throw new IllegalStateException("Vertex plugin is not configured, please upload plugin configuration properties (url, username, password)");
-    }
+public class NotConfiguredVertexHealthcheckClient implements VertexHealthcheckClient {
 }

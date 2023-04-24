@@ -45,10 +45,10 @@ public class VertexHealthcheck implements Healthcheck {
             return HealthStatus.healthy("Vertex OK (unauthenticated)");
         } else {
             // Specifying the tenant lets you also validate the tenant configuration
-            final VertexHealthcheckClient vertexHealthcheckClient = healthCheckApiConfigurationHandler.getConfigurable(tenant.getId());
+            final VertexHealthcheckClient vertexHealthcheckClientImpl = healthCheckApiConfigurationHandler.getConfigurable(tenant.getId());
 
             try {
-                PerformHealthCheckResponseType healthCheckResponse = vertexHealthcheckClient.healthCheck();
+                PerformHealthCheckResponseType healthCheckResponse = vertexHealthcheckClientImpl.healthCheck();
 
                 boolean healthy = "OK".equals(healthCheckResponse.getCalcEngine());
                 return healthy ? HealthStatus.healthy("Vertex CalcEngine status: OK") : HealthStatus.unHealthy("Vertex CalcEngine status: " + healthCheckResponse.getCalcEngine());

@@ -17,12 +17,20 @@
 
 package org.killbill.billing.plugin.vertex.client;
 
-import org.killbill.billing.plugin.vertex.gen.health.HealthCheckException;
-import org.killbill.billing.plugin.vertex.gen.health.PerformHealthCheckResponseType;
+import org.killbill.billing.plugin.vertex.gen.ApiException;
+import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessRemoveTransactionResponseType;
 
-public interface VertexHealthcheckClient {
+public class VertexTransactionApiClientImpl implements VertexTransactionApiClient {
 
-    default PerformHealthCheckResponseType healthCheck() throws HealthCheckException {
-        throw new IllegalStateException("Vertex plugin is not configured, please upload plugin configuration properties (url, username, password)");
+    private final TransactionApi transactionApi;
+
+    public VertexTransactionApiClientImpl(TransactionApi transactionApi) {
+        this.transactionApi = transactionApi;
+    }
+
+    @Override
+    public ApiSuccessRemoveTransactionResponseType deleteTransaction(final String id) throws ApiException {
+        return transactionApi.deleteTransaction(id);
     }
 }

@@ -30,8 +30,8 @@ public class VertexHealthCheckTest extends VertexRemoteTestBase {
     @Test
     public void test() {
         HealthCheckApiConfigurationHandler handler = new HealthCheckApiConfigurationHandler(null, null);
-        VertexHealthcheckClient vertexHealthcheckClient = handler.createConfigurable(properties);
-        handler.setDefaultConfigurable(vertexHealthcheckClient);
+        VertexHealthcheckClient vertexHealthcheckClientImpl = handler.createConfigurable(properties);
+        handler.setDefaultConfigurable(vertexHealthcheckClientImpl);
         VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(handler);
 
         TenantImp.Builder tenantBuilder = new TenantImp.Builder<>();

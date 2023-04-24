@@ -22,7 +22,7 @@ import java.util.Properties;
 
 import org.killbill.billing.plugin.TestUtils;
 import org.killbill.billing.plugin.vertex.EmbeddedDbHelper;
-import org.killbill.billing.plugin.vertex.VertexApiClient;
+import org.killbill.billing.plugin.vertex.client.VertexApiClientImpl;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
@@ -35,8 +35,6 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_PASSWORD;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_USERNAME;
 
 public abstract class VertexRemoteTestBase {
 
@@ -45,7 +43,7 @@ public abstract class VertexRemoteTestBase {
     private static final String VERTEX_PROPERTIES = "vertex.properties";
     protected Properties properties;
 
-    protected VertexApiClient vertexApiClient;
+    protected VertexApiClientImpl vertexApiClient;
     protected VertexDao dao;
 
     protected String url;
@@ -80,9 +78,6 @@ public abstract class VertexRemoteTestBase {
 
             properties.put(VERTEX_OSERIES_COMPANY_NAME_PROPERTY, System.getenv("VERTEX_COMPANY_NAME"));
             properties.put(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, System.getenv("VERTEX_COMPANY_DIVISION"));
-
-            properties.put(VERTEX_USERNAME, System.getenv(VERTEX_USERNAME));
-            properties.put(VERTEX_PASSWORD, System.getenv(VERTEX_PASSWORD));
         }
 
         this.url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
@@ -92,8 +87,6 @@ public abstract class VertexRemoteTestBase {
         //fixme: do we need this properties duplication?
         this.companyName = properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY);
         this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
-        this.username = properties.getProperty(VERTEX_USERNAME);
-        this.password = properties.getProperty(VERTEX_PASSWORD);
 
         this.properties = properties;
 
@@ -113,7 +106,7 @@ public abstract class VertexRemoteTestBase {
         String token = oAuthClient.getToken(url, clientId, clientSecret).getAccessToken();
         apiClient.setAccessToken(token);
 
-        this.vertexApiClient = new VertexApiClient(properties);
+        this.vertexApiClient = new VertexApiClientImpl(properties);
     }
 
 }

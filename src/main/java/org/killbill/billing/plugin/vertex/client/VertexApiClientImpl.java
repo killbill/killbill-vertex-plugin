@@ -15,7 +15,7 @@
  * under the License.
  */
 
-package org.killbill.billing.plugin.vertex;
+package org.killbill.billing.plugin.vertex.client;
 
 import java.util.Properties;
 
@@ -32,14 +32,14 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
 
-public class VertexApiClient {
+public class VertexApiClientImpl implements VertexApiClient {
 
     private final OAuthClient oAuthClient;
     private final CalculateTaxApi calculateTaxApi;
     private final String companyName;
     private final String companyDivision;
 
-    public VertexApiClient(final Properties properties) {
+    public VertexApiClientImpl(final Properties properties) {
         final String url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
         final String clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
         final String clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
@@ -51,14 +51,17 @@ public class VertexApiClient {
         this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
     }
 
+    @Override
     public String getCompanyName() {
         return companyName;
     }
 
+    @Override
     public String getCompanyDivision() {
         return companyDivision;
     }
 
+    @Override
     public ApiSuccessResponseTransactionResponseType calculateTaxes(SaleRequestType taxRequest) throws ApiException {
         return calculateTaxApi.salePost(taxRequest);
     }

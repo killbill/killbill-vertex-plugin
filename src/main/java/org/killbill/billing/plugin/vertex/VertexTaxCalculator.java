@@ -38,6 +38,7 @@ import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
 import org.killbill.billing.plugin.api.invoice.PluginTaxCalculator;
+import org.killbill.billing.plugin.vertex.client.VertexApiClient;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
@@ -70,7 +71,6 @@ import com.google.common.collect.Multimap;
 public class VertexTaxCalculator extends PluginTaxCalculator {
 
     public static final String TAX_CODE = "taxCode";
-    public static final String CUSTOMER_USAGE_TYPE = "customerUsageType";
     public static final String LOCATION_ADDRESS1 = "locationAddress1";
     public static final String LOCATION_ADDRESS2 = "locationAddress2";
     public static final String LOCATION_CITY = "locationCity";
@@ -177,9 +177,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             kbInvoiceItems.putAll(adjustmentItems);
         }
         for (final InvoiceItem taxableItem : taxableItems.values()) {
-            if (kbInvoiceItems.get(taxableItem.getId()) == null) {
-                kbInvoiceItems.put(taxableItem.getId(), ImmutableList.of());
-            }
+            kbInvoiceItems.computeIfAbsent(taxableItem.getId(), k -> ImmutableList.of());
         }
         // Don't use clock.getUTCToday(), see https://github.com/killbill/killbill-platform/issues/4
         final LocalDate taxItemsDate = newInvoice.getInvoiceDate();
@@ -268,7 +266,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                    final OwnerResponseLineItemType transactionLineModel,
                                                    @Nullable final InvoiceItem adjustmentItem) {
         if (transactionLineModel.getTaxes() == null || transactionLineModel.getTaxes().isEmpty()) {
-            final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, BigDecimal.valueOf(transactionLineModel.getTotalTax()), "Tax");
+            final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, transactionLineModel.getTotalTax() != null ? BigDecimal.valueOf(transactionLineModel.getTotalTax()) : new BigDecimal(0), "Tax");
             if (taxItem == null) {
                 return ImmutableList.of();
             } else {
@@ -278,7 +276,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             final Collection<InvoiceItem> invoiceItems = new LinkedList<>();
             for (final TaxesType transactionLineDetailModel : transactionLineModel.getTaxes()) {
                 final String description = MoreObjects.firstNonNull(transactionLineDetailModel.getTaxCode(), MoreObjects.firstNonNull(transactionLineDetailModel.getVertexTaxCode(), "Tax"));
-                final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, BigDecimal.valueOf(transactionLineDetailModel.getCalculatedTax()), description);
+                final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, transactionLineDetailModel.getCalculatedTax() != null ? BigDecimal.valueOf(transactionLineDetailModel.getCalculatedTax()) : new BigDecimal(0), description);
                 if (taxItem != null) {
                     invoiceItems.add(taxItem);
                 }

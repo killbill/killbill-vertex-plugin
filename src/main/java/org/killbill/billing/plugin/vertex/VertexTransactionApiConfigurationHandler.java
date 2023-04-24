@@ -19,8 +19,12 @@ package org.killbill.billing.plugin.vertex;
 
 import java.util.Properties;
 
+import org.jooq.tools.StringUtils;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
+import org.killbill.billing.plugin.vertex.client.NotConfiguredVertexTransactionApiClient;
+import org.killbill.billing.plugin.vertex.client.VertexTransactionApiClient;
+import org.killbill.billing.plugin.vertex.client.VertexTransactionApiClientImpl;
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
 import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
@@ -29,7 +33,7 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
 
-public class VertexTransactionApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<TransactionApi> {
+public class VertexTransactionApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<VertexTransactionApiClient> {
 
     private final OAuthClient oAuthClient;
 
@@ -40,15 +44,19 @@ public class VertexTransactionApiConfigurationHandler extends PluginTenantConfig
     }
 
     @Override
-    protected TransactionApi createConfigurable(final Properties properties) {
+    protected VertexTransactionApiClient createConfigurable(final Properties properties) {
         String url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
         String clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
         String clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
+
+        if (StringUtils.isBlank(url) || StringUtils.isBlank(clientId) || StringUtils.isBlank(clientSecret)) {
+            return new NotConfiguredVertexTransactionApiClient();
+        }
 
         ApiClient apiClient = new ApiClient();
         apiClient.setBasePath(url + "/vertex-ws/");
         String token = oAuthClient.getToken(url, clientId, clientSecret).getAccessToken();
         apiClient.setAccessToken(token);
-        return new TransactionApi(apiClient);
+        return new VertexTransactionApiClientImpl(new TransactionApi(apiClient));
     }
 }

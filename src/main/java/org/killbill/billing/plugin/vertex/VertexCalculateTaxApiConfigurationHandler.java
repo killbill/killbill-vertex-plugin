@@ -19,8 +19,16 @@ package org.killbill.billing.plugin.vertex;
 
 import java.util.Properties;
 
+import org.jooq.tools.StringUtils;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
+import org.killbill.billing.plugin.vertex.client.NotConfiguredVertexApiClient;
+import org.killbill.billing.plugin.vertex.client.VertexApiClient;
+import org.killbill.billing.plugin.vertex.client.VertexApiClientImpl;
+
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
 
 public class VertexCalculateTaxApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<VertexApiClient> {
 
@@ -30,6 +38,14 @@ public class VertexCalculateTaxApiConfigurationHandler extends PluginTenantConfi
 
     @Override
     protected VertexApiClient createConfigurable(final Properties properties) {
-        return new VertexApiClient(properties);
+        final String url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
+        final String clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
+        final String clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
+
+        if (StringUtils.isBlank(url) || StringUtils.isBlank(clientId) || StringUtils.isBlank(clientSecret)) {
+            return new NotConfiguredVertexApiClient();
+        }
+
+        return new VertexApiClientImpl(properties);
     }
 }
