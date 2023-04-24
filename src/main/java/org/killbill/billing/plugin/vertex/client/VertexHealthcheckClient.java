@@ -19,10 +19,9 @@ package org.killbill.billing.plugin.vertex.client;
 
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckException;
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
-
-import com.vertexinc.ws.healthcheck.generated.LoginType;
-import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckRequest;
-import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckResponseType;
+import org.killbill.billing.plugin.vertex.gen.health.LoginType;
+import org.killbill.billing.plugin.vertex.gen.health.PerformHealthCheckRequest;
+import org.killbill.billing.plugin.vertex.gen.health.PerformHealthCheckResponseType;
 
 public class VertexHealthcheckClient {
 
@@ -39,13 +38,13 @@ public class VertexHealthcheckClient {
     }
 
     private PerformHealthCheckRequest buildHealthcheckRequest(final String username, final String password) {
-        PerformHealthCheckRequest performHealthCheckRequest = new PerformHealthCheckRequest();
+        PerformHealthCheckRequest healthCheckRequest = new PerformHealthCheckRequest();
 
         LoginType login = new LoginType();
         login.setUserName(username);
         login.setPassword(password);
         healthCheckRequest.setLogin(login);
 
-        return performHealthCheckRequest;
+        return healthCheckRequest;
     }
 }

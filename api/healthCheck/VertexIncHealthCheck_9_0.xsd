@@ -6,7 +6,7 @@ Copyright (C) Vertex Inc. (2016). All Rights Reserved.--><xsd:schema targetNames
   <xsd:annotation>
     <xsd:appinfo>
       <jaxb:schemaBindings>
-        <jaxb:package name="com.vertexinc.ws.healthcheck.generated"/>
+        <jaxb:package name="org.killbill.billing.plugin.vertex.gen.health"/>
       </jaxb:schemaBindings>
     </xsd:appinfo>
   </xsd:annotation>

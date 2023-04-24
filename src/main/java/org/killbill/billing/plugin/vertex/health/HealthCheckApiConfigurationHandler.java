@@ -32,7 +32,7 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 
 public class HealthCheckApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<VertexHealthcheckClient> {
 
-    private final String HEALTHCHECK_PATH = "/vertex-ws/adminservices/HealthCheck90";
+    private static final String HEALTHCHECK_PATH = "/vertex-ws/adminservices/HealthCheck90";
 
     public HealthCheckApiConfigurationHandler(final String pluginName,
                                               final OSGIKillbillAPI osgiKillbillAPI) {

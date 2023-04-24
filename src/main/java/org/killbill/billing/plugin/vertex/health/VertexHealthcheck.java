@@ -23,11 +23,10 @@ import javax.annotation.Nullable;
 
 import org.killbill.billing.osgi.api.Healthcheck;
 import org.killbill.billing.plugin.vertex.client.VertexHealthcheckClient;
+import org.killbill.billing.plugin.vertex.gen.health.PerformHealthCheckResponseType;
 import org.killbill.billing.tenant.api.Tenant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckResponseType;
 
 public class VertexHealthcheck implements Healthcheck {
 
