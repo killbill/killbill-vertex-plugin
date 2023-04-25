@@ -19,12 +19,17 @@ package org.killbill.billing.plugin.vertex;
 
 import java.util.Properties;
 
+import org.jooq.tools.StringUtils;
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
 import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
+import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessRemoveTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.SaleRequestType;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
@@ -34,8 +39,11 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 
 public class VertexApiClient {
 
-    private final OAuthClient oAuthClient;
+    private static final Logger logger = LoggerFactory.getLogger(VertexApiClient.class);
+
     private final CalculateTaxApi calculateTaxApi;
+    private final TransactionApi transactionApi;
+
     private final String companyName;
     private final String companyDivision;
 
@@ -44,11 +52,12 @@ public class VertexApiClient {
         final String clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
         final String clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
 
-        this.oAuthClient = new OAuthClient();
-        this.calculateTaxApi = initApiClient(url, clientId, clientSecret);
-
         this.companyName = properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY);
         this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
+
+        final ApiClient apiClient = initApiClient(url, clientId, clientSecret);
+        this.calculateTaxApi = apiClient != null ? new CalculateTaxApi(apiClient) : null;
+        this.transactionApi = apiClient != null ? new TransactionApi(apiClient) : null;
     }
 
     public String getCompanyName() {
@@ -60,16 +69,33 @@ public class VertexApiClient {
     }
 
     public ApiSuccessResponseTransactionResponseType calculateTaxes(SaleRequestType taxRequest) throws ApiException {
+        if (calculateTaxApi == null) {
+            throw new IllegalStateException("VertexApiClient is not configured: url, clientId and clientSecret are required properties");
+        }
         return calculateTaxApi.salePost(taxRequest);
     }
 
-    private CalculateTaxApi initApiClient(final String url, final String clientId, final String clientSecret) {
-        final String token = oAuthClient.getToken(url, clientId, clientSecret).getAccessToken();
+    public ApiSuccessRemoveTransactionResponseType deleteTransaction(final String id) throws ApiException {
+        if (transactionApi == null) {
+            throw new IllegalStateException("VertexApiClient is not configured: url, clientId and clientSecret are required properties");
+        }
+        return transactionApi.deleteTransaction(id);
+    }
+
+    private ApiClient initApiClient(final String url, final String clientId, final String clientSecret) {
+        if (StringUtils.isBlank(url) || StringUtils.isBlank(clientId) || StringUtils.isBlank(clientSecret)) {
+            logger.warn("VertexApiClient is not configured: url, clientId and clientSecret are required properties");
+            return null;
+        }
 
         ApiClient apiClient = new ApiClient();
-        apiClient.setAccessToken(token);
         apiClient.setBasePath(url + "/vertex-ws/");
 
-        return new CalculateTaxApi(apiClient);
+        OAuthClient oAuthClient = new OAuthClient();
+        final String token = oAuthClient.getToken(url, clientId, clientSecret).getAccessToken();
+
+        apiClient.setAccessToken(token);
+
+        return apiClient;
     }
 }

@@ -81,16 +81,16 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
     private static final Logger logger = LoggerFactory.getLogger(VertexTaxCalculator.class);
 
-    private final VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler;
+    private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
     private final VertexDao dao;
     private final Clock clock;
 
-    public VertexTaxCalculator(final VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler,
+    public VertexTaxCalculator(final VertexApiConfigurationHandler vertexApiConfigurationHandler,
                                final VertexDao dao,
                                final Clock clock,
                                final OSGIKillbillAPI osgiKillbillAPI) {
         super(osgiKillbillAPI);
-        this.vertexCalculateTaxApiConfigurationHandler = vertexCalculateTaxApiConfigurationHandler;
+        this.vertexApiConfigurationHandler = vertexApiConfigurationHandler;
         this.clock = clock;
         this.dao = dao;
     }
@@ -208,7 +208,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                       final UUID kbTenantId,
                                                       final Map<UUID, Iterable<InvoiceItem>> kbInvoiceItems,
                                                       final LocalDate utcToday) throws ApiException, SQLException {
-        final VertexApiClient vertexApiClient = vertexCalculateTaxApiConfigurationHandler.getConfigurable(kbTenantId);
+        final VertexApiClient vertexApiClient = vertexApiConfigurationHandler.getConfigurable(kbTenantId);
 
         final SaleRequestType taxRequest = toTaxRequest(account,
                                                         invoice,

@@ -22,9 +22,9 @@ import java.util.Properties;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.plugin.api.notification.PluginTenantConfigurableConfigurationHandler;
 
-public class VertexCalculateTaxApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<VertexApiClient> {
+public class VertexApiConfigurationHandler extends PluginTenantConfigurableConfigurationHandler<VertexApiClient> {
 
-    public VertexCalculateTaxApiConfigurationHandler(final String pluginName, final OSGIKillbillAPI osgiKillbillAPI) {
+    public VertexApiConfigurationHandler(final String pluginName, final OSGIKillbillAPI osgiKillbillAPI) {
         super(pluginName, osgiKillbillAPI);
     }
 
