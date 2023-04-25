@@ -90,7 +90,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
     public void testItemAdjustments() {
 
         final Clock clock = new DefaultClock();
-        final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
+        final VertexApiConfigurationHandler avaTaxConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
                                                             osgiKillbillAPI,
@@ -180,7 +180,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
     public void testRepair() throws Exception {
 
         final Clock clock = new DefaultClock();
-        final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
+        final VertexApiConfigurationHandler avaTaxConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
                                                             osgiKillbillAPI,
