@@ -49,6 +49,9 @@ public class VertexHealthcheck implements Healthcheck {
         } else {
             // Specifying the tenant lets you also validate the tenant configuration
             final HealthCheckService healthCheckService = healthCheckApiConfigurationHandler.getConfigurable(tenant.getId());
+            if (healthCheckService == null) {
+                throw new IllegalStateException(HealthCheckApiConfigurationHandler.NOT_CONFIGURED_MSG);
+            }
             try {
                 PerformHealthCheckRequest healthCheckRequest = new PerformHealthCheckRequest();
                 LoginType login = new LoginType();
