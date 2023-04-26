@@ -52,12 +52,12 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
     private final VertexTaxCalculator calculator;
 
-    public VertexInvoicePluginApi(final VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler,
+    public VertexInvoicePluginApi(final VertexApiConfigurationHandler vertexApiConfigurationHandler,
                                   final OSGIKillbillAPI killbillApi,
                                   final OSGIConfigPropertiesService configProperties,
                                   final VertexDao dao, final Clock clock) {
         super(killbillApi, configProperties, clock);
-        this.calculator = new VertexTaxCalculator(vertexCalculateTaxApiConfigurationHandler, dao, clock, killbillApi);
+        this.calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, killbillApi);
     }
 
     @Override

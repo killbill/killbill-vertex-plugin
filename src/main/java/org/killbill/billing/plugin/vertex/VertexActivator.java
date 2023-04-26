@@ -30,20 +30,17 @@ import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHand
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
-import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 import org.killbill.billing.plugin.vertex.health.HealthCheckApiConfigurationHandler;
 import org.killbill.billing.plugin.vertex.health.VertexHealthcheck;
 import org.killbill.billing.plugin.vertex.health.VertexHealthcheckServlet;
-import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.osgi.framework.BundleContext;
 
 public class VertexActivator extends KillbillActivatorBase {
 
     public static final String PLUGIN_NAME = "killbill-vertex";
 
-    private VertexTransactionApiConfigurationHandler vertexTransactionApiConfigurationHandler;
-    private VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler;
+    private VertexApiConfigurationHandler vertexApiConfigurationHandler;
     private HealthCheckApiConfigurationHandler healthCheckApiConfigurationHandler;
 
     @Override
@@ -52,16 +49,11 @@ public class VertexActivator extends KillbillActivatorBase {
 
         final VertexDao dao = new VertexDao(dataSource.getDataSource());
 
-        OAuthClient oAuthClient = new OAuthClient();
-        vertexTransactionApiConfigurationHandler = new VertexTransactionApiConfigurationHandler(PLUGIN_NAME, killbillAPI, oAuthClient);
-        vertexCalculateTaxApiConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(PLUGIN_NAME, killbillAPI);
+        vertexApiConfigurationHandler = new VertexApiConfigurationHandler(PLUGIN_NAME, killbillAPI);
         healthCheckApiConfigurationHandler = new HealthCheckApiConfigurationHandler(PLUGIN_NAME, killbillAPI);
 
-        final TransactionApi vertexTransactionApiClient = vertexTransactionApiConfigurationHandler.createConfigurable(configProperties.getProperties());
-        vertexTransactionApiConfigurationHandler.setDefaultConfigurable(vertexTransactionApiClient);
-
-        final VertexApiClient vertexCalculateTaxApiClient = vertexCalculateTaxApiConfigurationHandler.createConfigurable(configProperties.getProperties());
-        vertexCalculateTaxApiConfigurationHandler.setDefaultConfigurable(vertexCalculateTaxApiClient);
+        final VertexApiClient vertexApiClient = vertexApiConfigurationHandler.createConfigurable(configProperties.getProperties());
+        vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
 
         final HealthCheckService healthCheckService = healthCheckApiConfigurationHandler.createConfigurable(configProperties.getProperties());
         healthCheckApiConfigurationHandler.setDefaultConfigurable(healthCheckService);
@@ -71,7 +63,7 @@ public class VertexActivator extends KillbillActivatorBase {
         registerHealthcheck(context, vertexHealthcheck);
 
         // Register the invoice plugin
-        final VertexInvoicePluginApi pluginApi = new VertexInvoicePluginApi(vertexCalculateTaxApiConfigurationHandler,
+        final VertexInvoicePluginApi pluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                                             killbillAPI,
                                                                             configProperties,
                                                                             dao,
@@ -95,8 +87,7 @@ public class VertexActivator extends KillbillActivatorBase {
     }
 
     public void registerHandlers() {
-        final PluginConfigurationEventHandler handler = new PluginConfigurationEventHandler(vertexTransactionApiConfigurationHandler,
-                                                                                            vertexCalculateTaxApiConfigurationHandler);
+        final PluginConfigurationEventHandler handler = new PluginConfigurationEventHandler(vertexApiConfigurationHandler);
         dispatcher.registerEventHandlers(handler);
     }
 
