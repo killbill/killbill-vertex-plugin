@@ -39,6 +39,7 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 
 public class VertexApiClient {
 
+    private static final String NOT_CONFIGURED_MSG = "VertexApiClient is not configured: url, clientId and clientSecret are required properties";
     private static final Logger logger = LoggerFactory.getLogger(VertexApiClient.class);
 
     private final CalculateTaxApi calculateTaxApi;
@@ -70,21 +71,21 @@ public class VertexApiClient {
 
     public ApiSuccessResponseTransactionResponseType calculateTaxes(SaleRequestType taxRequest) throws ApiException {
         if (calculateTaxApi == null) {
-            throw new IllegalStateException("VertexApiClient is not configured: url, clientId and clientSecret are required properties");
+            throw new IllegalStateException(NOT_CONFIGURED_MSG);
         }
         return calculateTaxApi.salePost(taxRequest);
     }
 
     public ApiSuccessRemoveTransactionResponseType deleteTransaction(final String id) throws ApiException {
         if (transactionApi == null) {
-            throw new IllegalStateException("VertexApiClient is not configured: url, clientId and clientSecret are required properties");
+            throw new IllegalStateException(NOT_CONFIGURED_MSG);
         }
         return transactionApi.deleteTransaction(id);
     }
 
     private ApiClient initApiClient(final String url, final String clientId, final String clientSecret) {
         if (StringUtils.isBlank(url) || StringUtils.isBlank(clientId) || StringUtils.isBlank(clientSecret)) {
-            logger.warn("VertexApiClient is not configured: url, clientId and clientSecret are required properties");
+            logger.warn(NOT_CONFIGURED_MSG);
             return null;
         }
 
