@@ -39,7 +39,7 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 
 public class VertexApiClient {
 
-    private static final String NOT_CONFIGURED_MSG = "VertexApiClient is not configured: url, clientId and clientSecret are required properties";
+    private static final String NOT_CONFIGURED_MSG = "VertexApiClient is not configured: url, clientId and clientSecret are required";
     private static final Logger logger = LoggerFactory.getLogger(VertexApiClient.class);
 
     private final CalculateTaxApi calculateTaxApi;
