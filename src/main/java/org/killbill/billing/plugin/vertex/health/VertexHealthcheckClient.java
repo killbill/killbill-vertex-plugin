@@ -24,12 +24,11 @@ import java.util.Properties;
 import org.jooq.tools.StringUtils;
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckException;
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
+import org.killbill.billing.plugin.vertex.gen.health.LoginType;
+import org.killbill.billing.plugin.vertex.gen.health.PerformHealthCheckRequest;
+import org.killbill.billing.plugin.vertex.gen.health.PerformHealthCheckResponseType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.vertexinc.ws.healthcheck.generated.LoginType;
-import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckRequest;
-import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckResponseType;
 
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_PASSWORD_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
@@ -51,7 +50,7 @@ public class VertexHealthcheckClient {
     }
 
     public PerformHealthCheckResponseType performHealthCheck() throws HealthCheckException {
-        if (healthCheckService == null && healthCheckRequest == null) {
+        if (healthCheckService == null || healthCheckRequest == null) {
             throw new IllegalStateException("VertexHealthcheckClient is not configured: url, username and password are required");
         }
 
