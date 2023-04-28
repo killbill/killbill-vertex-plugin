@@ -22,13 +22,10 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import org.killbill.billing.osgi.api.Healthcheck;
-import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 import org.killbill.billing.tenant.api.Tenant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.vertexinc.ws.healthcheck.generated.LoginType;
-import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckRequest;
 import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckResponseType;
 
 public class VertexHealthcheck implements Healthcheck {
@@ -48,17 +45,9 @@ public class VertexHealthcheck implements Healthcheck {
             return HealthStatus.healthy("Vertex OK (unauthenticated)");
         } else {
             // Specifying the tenant lets you also validate the tenant configuration
-            final HealthCheckService healthCheckService = healthCheckApiConfigurationHandler.getConfigurable(tenant.getId());
-            if (healthCheckService == null) {
-                throw new IllegalStateException(HealthCheckApiConfigurationHandler.NOT_CONFIGURED_MSG);
-            }
+            final VertexHealthcheckClient vertexHealthcheckClient = healthCheckApiConfigurationHandler.getConfigurable(tenant.getId());
             try {
-                PerformHealthCheckRequest healthCheckRequest = new PerformHealthCheckRequest();
-                LoginType login = new LoginType();
-                login.setUserName(tenant.getApiKey());//fixme is it OK to set username/password
-                login.setPassword(tenant.getApiSecret());
-                healthCheckRequest.setLogin(login);
-                PerformHealthCheckResponseType healthCheckResponse = healthCheckService.getHealthCheckPort().performHealthCheck(healthCheckRequest);
+                PerformHealthCheckResponseType healthCheckResponse = vertexHealthcheckClient.performHealthCheck();
                 boolean healthy = "OK".equals(healthCheckResponse.getCalcEngine());
                 return healthy ? HealthStatus.healthy("Vertex CalcEngine status: OK") : HealthStatus.unHealthy("Vertex CalcEngine status: " + healthCheckResponse.getCalcEngine());
             } catch (Exception e) {

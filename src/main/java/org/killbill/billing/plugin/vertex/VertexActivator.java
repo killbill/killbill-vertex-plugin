@@ -30,9 +30,9 @@ import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHand
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
-import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 import org.killbill.billing.plugin.vertex.health.HealthCheckApiConfigurationHandler;
 import org.killbill.billing.plugin.vertex.health.VertexHealthcheck;
+import org.killbill.billing.plugin.vertex.health.VertexHealthcheckClient;
 import org.killbill.billing.plugin.vertex.health.VertexHealthcheckServlet;
 import org.osgi.framework.BundleContext;
 
@@ -55,8 +55,8 @@ public class VertexActivator extends KillbillActivatorBase {
         final VertexApiClient vertexApiClient = vertexApiConfigurationHandler.createConfigurable(configProperties.getProperties());
         vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
 
-        final HealthCheckService healthCheckService = healthCheckApiConfigurationHandler.createConfigurable(configProperties.getProperties());
-        healthCheckApiConfigurationHandler.setDefaultConfigurable(healthCheckService);
+        final VertexHealthcheckClient vertexHealthcheckClient = healthCheckApiConfigurationHandler.createConfigurable(configProperties.getProperties());
+        healthCheckApiConfigurationHandler.setDefaultConfigurable(vertexHealthcheckClient);
 
         // Expose the healthcheck, so other plugins can check on the Vertex status
         final VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(healthCheckApiConfigurationHandler);
@@ -77,6 +77,7 @@ public class VertexActivator extends KillbillActivatorBase {
                                                          super.clock,
                                                          configProperties).withRouteClass(VertexHealthcheckServlet.class)
                                                                           .withService(vertexHealthcheck)
+                                                                          .withService(HealthCheckApiConfigurationHandler.class)
                                                                           .withService(dao)
                                                                           .build();
 

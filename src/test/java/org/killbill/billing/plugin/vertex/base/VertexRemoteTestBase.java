@@ -34,9 +34,9 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_PASSWORD_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_PASSWORD;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_USERNAME;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_USERNAME_PROPERTY;
 
 public abstract class VertexRemoteTestBase {
 
@@ -78,22 +78,24 @@ public abstract class VertexRemoteTestBase {
             properties.put(VERTEX_OSERIES_CLIENT_ID_PROPERTY, System.getenv("VERTEX_CLIENT_ID"));
             properties.put(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY, System.getenv("VERTEX_SECRET_ID"));
 
+            properties.put(VERTEX_OSERIES_USERNAME_PROPERTY, System.getenv("VERTEX_USERNAME"));
+            properties.put(VERTEX_OSERIES_PASSWORD_PROPERTY, System.getenv("VERTEX_PASSWORD"));
+
             properties.put(VERTEX_OSERIES_COMPANY_NAME_PROPERTY, System.getenv("VERTEX_COMPANY_NAME"));
             properties.put(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, System.getenv("VERTEX_COMPANY_DIVISION"));
 
-            properties.put(VERTEX_USERNAME, System.getenv(VERTEX_USERNAME));
-            properties.put(VERTEX_PASSWORD, System.getenv(VERTEX_PASSWORD));
         }
 
         this.url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
         this.clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
         this.clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
 
+        this.username = properties.getProperty(VERTEX_OSERIES_USERNAME_PROPERTY);
+        this.password = properties.getProperty(VERTEX_OSERIES_PASSWORD_PROPERTY);
+
         //fixme: do we need this properties duplication?
         this.companyName = properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY);
         this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
-        this.username = properties.getProperty(VERTEX_USERNAME);
-        this.password = properties.getProperty(VERTEX_PASSWORD);
 
         this.properties = properties;
 

@@ -19,7 +19,6 @@ package org.killbill.billing.plugin.vertex.health;
 
 import org.killbill.billing.osgi.api.Healthcheck.HealthStatus;
 import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
-import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 import org.killbill.billing.tenant.api.Tenant;
 import org.killbill.billing.tenant.api.boilerplate.TenantImp;
 import org.testng.Assert;
@@ -30,14 +29,13 @@ public class VertexHealthCheckTest extends VertexRemoteTestBase {
     @Test
     public void test() {
         HealthCheckApiConfigurationHandler handler = new HealthCheckApiConfigurationHandler(null, null);
-        HealthCheckService healthCheckService = handler.createConfigurable(properties);
-        handler.setDefaultConfigurable(healthCheckService);
+        VertexHealthcheckClient vertexHealthcheckClient = handler.createConfigurable(properties);
+        handler.setDefaultConfigurable(vertexHealthcheckClient);
         VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(handler);
 
         TenantImp.Builder tenantBuilder = new TenantImp.Builder<>();
-        Tenant tenant = tenantBuilder.withApiKey(username).withApiSecret(password).build();
+        Tenant tenant = tenantBuilder.withApiKey("anyKey").withApiSecret("anySecret").build();
         HealthStatus healthStatus = vertexHealthcheck.getHealthStatus(tenant, null);
         Assert.assertEquals(healthStatus.getDetails().get("message"), "Vertex CalcEngine status: OK");
     }
-
 }
