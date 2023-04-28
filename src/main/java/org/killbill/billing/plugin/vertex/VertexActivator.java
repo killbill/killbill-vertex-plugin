@@ -72,6 +72,7 @@ public class VertexActivator extends KillbillActivatorBase {
 
         // Register the invoice plugin
         final VertexInvoicePluginApi pluginApi = new VertexInvoicePluginApi(vertexCalculateTaxApiConfigurationHandler,
+                                                                            vertexTransactionApiConfigurationHandler,
                                                                             killbillAPI,
                                                                             configProperties,
                                                                             dao,

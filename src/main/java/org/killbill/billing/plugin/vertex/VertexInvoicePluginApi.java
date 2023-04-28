@@ -17,6 +17,7 @@
 
 package org.killbill.billing.plugin.vertex;
 
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -32,16 +33,23 @@ import org.killbill.billing.catalog.api.Plan;
 import org.killbill.billing.catalog.api.StaticCatalog;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
+import org.killbill.billing.invoice.plugin.api.InvoiceContext;
+import org.killbill.billing.invoice.plugin.api.OnSuccessInvoiceResult;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
 import org.killbill.billing.plugin.api.invoice.PluginInvoicePluginApi;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
+import org.killbill.billing.plugin.vertex.gen.ApiException;
+import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;
 import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.killbill.billing.util.customfield.CustomField;
 import org.killbill.clock.Clock;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
@@ -50,13 +58,22 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_S
 
 public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
+    private static final Logger logger = LoggerFactory.getLogger(VertexInvoicePluginApi.class);
+
+    private static final String INVOICE_OPERATION = "INVOICE_OPERATION";
+
     private final VertexTaxCalculator calculator;
+    private final VertexDao dao;
+    private final VertexTransactionApiConfigurationHandler vertexTransactionApiConfigurationHandler;
 
     public VertexInvoicePluginApi(final VertexCalculateTaxApiConfigurationHandler vertexCalculateTaxApiConfigurationHandler,
+                                  final VertexTransactionApiConfigurationHandler vertexTransactionApiConfigurationHandler,
                                   final OSGIKillbillAPI killbillApi,
                                   final OSGIConfigPropertiesService configProperties,
                                   final VertexDao dao, final Clock clock) {
         super(killbillApi, configProperties, clock);
+        this.dao = dao;
+        this.vertexTransactionApiConfigurationHandler = vertexTransactionApiConfigurationHandler;
         this.calculator = new VertexTaxCalculator(vertexCalculateTaxApiConfigurationHandler, dao, clock, killbillApi);
     }
 
@@ -156,5 +173,39 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
         if (PluginProperties.findPluginPropertyValue(pluginPropertyName, properties) == null) {
             properties.add(new PluginProperty(pluginPropertyName, taxCode, false));
         }
+    }
+
+    @Override
+    public OnSuccessInvoiceResult onSuccessCall(final InvoiceContext context, final Iterable<PluginProperty> properties) {
+        final String invoiceOperation = PluginProperties.findPluginPropertyValue(INVOICE_OPERATION, properties);
+        if (invoiceOperation == null) {
+            return super.onSuccessCall(context, properties);
+        }
+
+        final Collection<String> docCodes = new HashSet<>();
+        try {
+            // Find existing transactions
+            final List<VertexResponsesRecord> responses = dao.getSuccessfulResponses(context.getInvoice().getId(), context.getTenantId());
+            for (final VertexResponsesRecord response : responses) {
+                docCodes.add(response.getDocCode());
+            }
+        } catch (final SQLException e) {
+            logger.warn("Unable to {} transaction in Vertex", invoiceOperation, e);
+            // Don't fail the whole operation though
+        }
+
+        final TransactionApi transactionApi = vertexTransactionApiConfigurationHandler.getConfigurable(context.getTenantId());
+        for (final String docCode : docCodes) {
+            try {
+                if ("void".equals(invoiceOperation)) {
+                    transactionApi.deleteTransaction(docCode);
+                }
+            } catch (final ApiException e) {
+                logger.warn("Unable to {} transaction in Vertex", invoiceOperation, e);
+                // Don't fail the whole operation though
+            }
+        }
+
+        return super.onSuccessCall(context, properties);
     }
 }

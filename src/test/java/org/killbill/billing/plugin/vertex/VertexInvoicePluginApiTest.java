@@ -93,6 +93,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
+                                                            null,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
                                                             dao,
@@ -183,6 +184,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         final VertexCalculateTaxApiConfigurationHandler avaTaxConfigurationHandler = new VertexCalculateTaxApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
+                                                            null,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
                                                             dao,

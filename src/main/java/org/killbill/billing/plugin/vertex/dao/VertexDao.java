@@ -83,7 +83,7 @@ public class VertexDao extends PluginDao {
                                    VERTEX_RESPONSES.KB_ACCOUNT_ID,
                                    VERTEX_RESPONSES.KB_INVOICE_ID,
                                    VERTEX_RESPONSES.KB_INVOICE_ITEM_IDS,
-                               /* VERTEX_RESPONSES.DOC_CODE,*/
+                                   VERTEX_RESPONSES.DOC_CODE,
                                    VERTEX_RESPONSES.DOC_DATE,
                                    VERTEX_RESPONSES.TIMESTAMP,
                                    VERTEX_RESPONSES.TOTAL_AMOUNT,
@@ -104,7 +104,7 @@ public class VertexDao extends PluginDao {
                        .values(kbAccountId.toString(),
                                kbInvoiceId.toString(),
                                kbInvoiceItemsIdsAsString(kbInvoiceItems),
-                               /* "resultData.code",*/
+                               resultData.getTransactionId(),
                                resultData.getDocumentDate() == null ? null : resultData.getDocumentDate().atStartOfDay(),
                                null,
                                resultData.getTotal() == null ? null : BigDecimal.valueOf(resultData.getTotal()),
