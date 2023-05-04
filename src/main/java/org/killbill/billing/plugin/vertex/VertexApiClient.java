@@ -20,13 +20,19 @@ package org.killbill.billing.plugin.vertex;
 import java.util.Properties;
 
 import org.jooq.tools.StringUtils;
+import org.killbill.billing.osgi.api.Healthcheck.HealthStatus;
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
 import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
+import org.killbill.billing.plugin.vertex.gen.client.TaxAreaLookupApi;
 import org.killbill.billing.plugin.vertex.gen.client.TransactionApi;
+import org.killbill.billing.plugin.vertex.gen.client.model.AddressLookupRequestType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessRemoveTransactionResponseType;
+import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTaxAreaLookupResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
+import org.killbill.billing.plugin.vertex.gen.client.model.PostalAddressType;
 import org.killbill.billing.plugin.vertex.gen.client.model.SaleRequestType;
+import org.killbill.billing.plugin.vertex.gen.client.model.TaxAreaIdLookupRequestType;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,11 +45,12 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 
 public class VertexApiClient {
 
-    private static final String NOT_CONFIGURED_MSG = "VertexApiClient is not configured: url, clientId and clientSecret are required";
+    public static final String NOT_CONFIGURED_MSG = "VertexApiClient is not configured: url, clientId and clientSecret are required";
     private static final Logger logger = LoggerFactory.getLogger(VertexApiClient.class);
 
     private final CalculateTaxApi calculateTaxApi;
     private final TransactionApi transactionApi;
+    private final TaxAreaLookupApi taxAreaLookupApi;
 
     private final String companyName;
     private final String companyDivision;
@@ -59,6 +66,7 @@ public class VertexApiClient {
         final ApiClient apiClient = initApiClient(url, clientId, clientSecret);
         this.calculateTaxApi = apiClient != null ? new CalculateTaxApi(apiClient) : null;
         this.transactionApi = apiClient != null ? new TransactionApi(apiClient) : null;
+        this.taxAreaLookupApi = apiClient != null ? new TaxAreaLookupApi(apiClient) : null;
     }
 
     public String getCompanyName() {
@@ -81,6 +89,13 @@ public class VertexApiClient {
             throw new IllegalStateException(NOT_CONFIGURED_MSG);
         }
         return transactionApi.deleteTransaction(id);
+    }
+
+    public ApiSuccessResponseTaxAreaLookupResponseType lookUpTaxAreaByAddress(AddressLookupRequestType addressLookupRequest) throws ApiException {
+        if (transactionApi == null) {
+            throw new IllegalStateException(NOT_CONFIGURED_MSG);
+        }
+        return this.taxAreaLookupApi.addressLookupPost(addressLookupRequest);
     }
 
     private ApiClient initApiClient(final String url, final String clientId, final String clientSecret) {

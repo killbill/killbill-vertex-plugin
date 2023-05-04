@@ -22,6 +22,12 @@ import java.util.Map;
 import javax.annotation.Nullable;
 
 import org.killbill.billing.osgi.api.Healthcheck;
+import org.killbill.billing.plugin.vertex.VertexApiClient;
+import org.killbill.billing.plugin.vertex.VertexApiConfigurationHandler;
+import org.killbill.billing.plugin.vertex.gen.ApiException;
+import org.killbill.billing.plugin.vertex.gen.client.model.AddressLookupRequestType;
+import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTaxAreaLookupResponseType;
+import org.killbill.billing.plugin.vertex.gen.client.model.PostalAddressType;
 import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 import org.killbill.billing.tenant.api.Tenant;
 import org.slf4j.Logger;
@@ -31,14 +37,16 @@ import com.vertexinc.ws.healthcheck.generated.LoginType;
 import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckRequest;
 import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckResponseType;
 
+import static org.killbill.billing.plugin.vertex.VertexApiClient.NOT_CONFIGURED_MSG;
+
 public class VertexHealthcheck implements Healthcheck {
 
     private static final Logger logger = LoggerFactory.getLogger(VertexHealthcheck.class);
 
-    private final HealthCheckApiConfigurationHandler healthCheckApiConfigurationHandler;
+    private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
 
-    public VertexHealthcheck(final HealthCheckApiConfigurationHandler healthCheckApiConfigurationHandler) {
-        this.healthCheckApiConfigurationHandler = healthCheckApiConfigurationHandler;
+    public VertexHealthcheck(final VertexApiConfigurationHandler vertexApiConfigurationHandler) {
+        this.vertexApiConfigurationHandler = vertexApiConfigurationHandler;
     }
 
     @Override
@@ -47,23 +55,27 @@ public class VertexHealthcheck implements Healthcheck {
             // The plugin is running
             return HealthStatus.healthy("Vertex OK (unauthenticated)");
         } else {
-            // Specifying the tenant lets you also validate the tenant configuration
-            final HealthCheckService healthCheckService = healthCheckApiConfigurationHandler.getConfigurable(tenant.getId());
-            if (healthCheckService == null) {
-                throw new IllegalStateException(HealthCheckApiConfigurationHandler.NOT_CONFIGURED_MSG);
+            final VertexApiClient vertexClient = vertexApiConfigurationHandler.getConfigurable(tenant.getId());
+            if (vertexClient == null) {
+                logger.warn(NOT_CONFIGURED_MSG);
+                return HealthStatus.unHealthy(NOT_CONFIGURED_MSG);
             }
+
+            PostalAddressType address = new PostalAddressType();
+            address.setCity("Redwood City");
+            address.setCountry("USA");
+            address.setMainDivision("California");
+            address.setPostalCode("94065");
+
+            AddressLookupRequestType addressLookupRequest = new AddressLookupRequestType();
+            addressLookupRequest.setPostalAddress(address);
             try {
-                PerformHealthCheckRequest healthCheckRequest = new PerformHealthCheckRequest();
-                LoginType login = new LoginType();
-                login.setUserName(tenant.getApiKey());//fixme is it OK to set username/password
-                login.setPassword(tenant.getApiSecret());
-                healthCheckRequest.setLogin(login);
-                PerformHealthCheckResponseType healthCheckResponse = healthCheckService.getHealthCheckPort().performHealthCheck(healthCheckRequest);
-                boolean healthy = "OK".equals(healthCheckResponse.getCalcEngine());
-                return healthy ? HealthStatus.healthy("Vertex CalcEngine status: OK") : HealthStatus.unHealthy("Vertex CalcEngine status: " + healthCheckResponse.getCalcEngine());
+                vertexClient.lookUpTaxAreaByAddress(addressLookupRequest);
             } catch (Exception e) {
-                return HealthStatus.unHealthy(e.getMessage());
+                logger.error("health-check via TaxAreaLookup API failed - " + e.getMessage());
+                return HealthStatus.unHealthy("health check failed");
             }
+            return HealthStatus.healthy();
         }
     }
 }
