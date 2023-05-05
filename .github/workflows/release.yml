@@ -83,8 +83,6 @@ jobs:
           VERTEX_CLIENT_SECRET: ${{ secrets.VERTEX_CLIENT_SECRET }}
           VERTEX_COMPANY_NAME: ${{ secrets.VERTEX_COMPANY_NAME }}
           VERTEX_COMPANY_DIVISION: ${{ secrets.VERTEX_COMPANY_DIVISION }}
-          VERTEX_USERNAME: ${{ secrets.VERTEX_USERNAME }}
-          VERTEX_PASSWORD: ${{ secrets.VERTEX_PASSWORD }}
         # It will still check the remote but hopefully not download much (0 B at 0 B/s). -o isn't safe because of MDEP-82 (see above).
         run: |
           mvn ${MAVEN_FLAGS} release:clean release:prepare release:perform
