@@ -24,7 +24,7 @@
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>vertex-plugin</artifactId>
-    <version>0.1.0-SNAPSHOT</version>
+    <version>0.1.0</version>
     <packaging>bundle</packaging>
     <name>Kill Bill OSGI Vertex plugin</name>
     <description>Kill Bill Vertex plugin</description>
@@ -32,6 +32,7 @@
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-vertex-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:killbill/killbill-vertex-plugin.git</developerConnection>
+        <tag>master</tag>
         <url>http://github.com/killbill/killbill-vertex-plugin/tree/master</url>
     </scm>
     <issueManagement>
