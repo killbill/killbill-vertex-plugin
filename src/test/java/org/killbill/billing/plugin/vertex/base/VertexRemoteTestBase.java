@@ -35,8 +35,6 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_PASSWORD;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_USERNAME;
 
 public abstract class VertexRemoteTestBase {
 
@@ -76,13 +74,10 @@ public abstract class VertexRemoteTestBase {
             // Look up environment variables instead
             properties.put(VERTEX_OSERIES_URL_PROPERTY, System.getenv("VERTEX_URL"));
             properties.put(VERTEX_OSERIES_CLIENT_ID_PROPERTY, System.getenv("VERTEX_CLIENT_ID"));
-            properties.put(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY, System.getenv("VERTEX_SECRET_ID"));
+            properties.put(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY, System.getenv("VERTEX_CLIENT_SECRET"));
 
             properties.put(VERTEX_OSERIES_COMPANY_NAME_PROPERTY, System.getenv("VERTEX_COMPANY_NAME"));
             properties.put(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, System.getenv("VERTEX_COMPANY_DIVISION"));
-
-            properties.put(VERTEX_USERNAME, System.getenv(VERTEX_USERNAME));
-            properties.put(VERTEX_PASSWORD, System.getenv(VERTEX_PASSWORD));
         }
 
         this.url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
@@ -92,8 +87,6 @@ public abstract class VertexRemoteTestBase {
         //fixme: do we need this properties duplication?
         this.companyName = properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY);
         this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
-        this.username = properties.getProperty(VERTEX_USERNAME);
-        this.password = properties.getProperty(VERTEX_PASSWORD);
 
         this.properties = properties;
 
