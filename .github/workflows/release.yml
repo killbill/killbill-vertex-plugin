@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       parent_version:
-        description: 'New killbill-oss-parent version'
+        description: 'New killbill-vertex-plugin version'
         required: false
         default: ''
       perform_version:
