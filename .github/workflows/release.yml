@@ -67,7 +67,6 @@ jobs:
           server-password: OSSRH_PASS
           gpg-private-key: ${{ secrets.GPG_SIGNING_KEY }}
           gpg-passphrase: GPG_PASSPHRASE
-      - name: Release artifacts
       - name: Perform release
         env:
           OSSRH_USER: ${{ secrets.OSSRH_USER }}
