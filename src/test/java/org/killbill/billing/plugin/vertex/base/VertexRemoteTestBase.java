@@ -49,8 +49,6 @@ public abstract class VertexRemoteTestBase {
     protected String url;
     protected String clientId;
     protected String clientSecret;
-    protected String username;
-    protected String password;
     protected String companyName;
     protected String companyDivision;
 
@@ -78,6 +76,7 @@ public abstract class VertexRemoteTestBase {
 
             properties.put(VERTEX_OSERIES_COMPANY_NAME_PROPERTY, System.getenv("VERTEX_COMPANY_NAME"));
             properties.put(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, System.getenv("VERTEX_COMPANY_DIVISION"));
+
         }
 
         this.url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
