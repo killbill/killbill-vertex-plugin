@@ -1,0 +1,14 @@
+name: ci
+
+on:
+  - push
+  - pull_request
+  - workflow_dispatch
+
+jobs:
+  ci:
+    uses: killbill/gh-actions-shared/.github/workflows/ci.yml@main
+    with:
+      test-profile-matrix: '[ "travis", "integration-mysql", "integration-postgresql" ]'
+    secrets:
+      extra-env: '{ "VERTEX_URL": "${{ secrets.VERTEX_URL }}", "VERTEX_CLIENT_ID": "${{ secrets.VERTEX_CLIENT_ID }}", "VERTEX_CLIENT_SECRET": "${{ secrets.VERTEX_CLIENT_SECRET }}", "VERTEX_COMPANY_NAME": "${{ secrets.VERTEX_COMPANY_NAME }}", "VERTEX_COMPANY_DIVISION": "${{ secrets.VERTEX_COMPANY_DIVISION }}"}'
