@@ -50,6 +50,7 @@ import org.killbill.clock.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
@@ -57,8 +58,9 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_S
 
 public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
+    @VisibleForTesting
+    static final String INVOICE_OPERATION = "INVOICE_OPERATION";
     private static final Logger logger = LoggerFactory.getLogger(VertexInvoicePluginApi.class);
-    private static final String INVOICE_OPERATION = "INVOICE_OPERATION";
 
     private final VertexTaxCalculator calculator;
     private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
@@ -67,9 +69,10 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
     public VertexInvoicePluginApi(final VertexApiConfigurationHandler vertexApiConfigurationHandler,
                                   final OSGIKillbillAPI killbillApi,
                                   final OSGIConfigPropertiesService configProperties,
+                                  final VertexTaxCalculator vertexTaxCalculator,
                                   final VertexDao dao, final Clock clock) {
         super(killbillApi, configProperties, clock);
-        this.calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, killbillApi);
+        this.calculator = vertexTaxCalculator;
         this.vertexApiConfigurationHandler = vertexApiConfigurationHandler;
         this.dao = dao;
     }

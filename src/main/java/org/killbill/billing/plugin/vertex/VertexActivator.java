@@ -55,12 +55,17 @@ public class VertexActivator extends KillbillActivatorBase {
         final VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(vertexApiConfigurationHandler);
         registerHealthcheck(context, vertexHealthcheck);
 
-        // Register the invoice plugin
+        final VertexTaxCalculator vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler,
+                                                                                dao,
+                                                                                clock.getClock(),
+                                                                                killbillAPI);
         final VertexInvoicePluginApi pluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                                             killbillAPI,
                                                                             configProperties,
+                                                                            vertexTaxCalculator,
                                                                             dao,
                                                                             clock.getClock());
+        // Register the invoice plugin
         registerInvoicePluginApi(context, pluginApi);
 
         // Register the servlet
