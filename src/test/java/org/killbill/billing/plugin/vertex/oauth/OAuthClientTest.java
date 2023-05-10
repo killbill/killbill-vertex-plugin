@@ -27,7 +27,7 @@ public class OAuthClientTest extends VertexRemoteTestBase {
     public void test() {
         OAuthClient client = new OAuthClient();
 
-        String token = client.getToken(url, clientId, clientSecret).getAccessToken();
+        String token = client.getToken(getUrl(), getClientId(), getClientSecret()).getAccessToken();
         Assert.assertNotNull(token);
     }
 
