@@ -185,15 +185,6 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
                 continue;
             }
 
-           /* if (productToTaxCodeCache.get(productName) == null) {fixme do we need to store taxcodes in DB?
-                try {
-                    final String taxCode = dao.getTaxCode(productName, context.getTenantId());
-                    productToTaxCodeCache.put(productName, taxCode);
-                } catch (final SQLException e) {
-                    continue;
-                }
-            }*/
-
             final String taxCode = productToTaxCodeCache.get(productName);
             if (taxCode != null) {
                 addTaxCodeToInvoiceItem(invoiceItem.getId(), productToTaxCodeCache.get(productName), properties);
