@@ -105,16 +105,6 @@
             <version>1.3.5</version>
         </dependency>
         <dependency>
-            <groupId>jakarta.jws</groupId>
-            <artifactId>jakarta.jws-api</artifactId>
-            <version>2.1.0</version>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.xml.bind</groupId>
-            <artifactId>jakarta.xml.bind-api</artifactId>
-            <version>2.3.3</version>
-        </dependency>
-        <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
         </dependency>
@@ -231,31 +221,6 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.cxf</groupId>
-                <artifactId>cxf-codegen-plugin</artifactId>
-                <version>3.5.5</version>
-                <executions>
-                    <execution>
-                        <id>process-sources</id>
-                        <goals>
-                            <goal>wsdl2java</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
-                        <configuration>
-                            <wsdlOptions>
-                                <wsdlOption>
-                                    <wsdl>${project.basedir}/api/healthCheck/HealthCheck90_1.wsdl</wsdl>
-                                    <extraargs>
-                                        <extraarg>-p</extraarg>
-                                        <extraarg>org.killbill.billing.plugin.vertex.gen.health</extraarg>
-                                    </extraargs>
-                                </wsdlOption>
-                            </wsdlOptions>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
                 <extensions>true</extensions>
@@ -294,7 +259,7 @@
                         <configuration>
                             <excludes>
                                 <exclude>docker/**</exclude>
-                                <exclude>api/**</exclude>
+                                <exclude>src/main/resources/openapi/**</exclude>
                             </excludes>
                         </configuration>
                     </execution>
@@ -312,7 +277,7 @@
                         <phase>generate-sources</phase>
                         <configuration>
                             <sources>
-                                <source>${project.basedir}/target/generated-sources/jooq/</source>
+                                <source>${basedir}/target/generated-sources/jooq/</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -324,7 +289,7 @@
                 <version>${jooq.version}</version>
 
                 <configuration>
-                    <configurationFile>${project.basedir}/src/main/resources/gen.xml</configurationFile>
+                    <configurationFile>${basedir}/src/main/resources/gen.xml</configurationFile>
                 </configuration>
 
                 <dependencies>
@@ -357,7 +322,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/api/tax-calc-api-v2.json</inputSpec>
+                            <inputSpec>${basedir}/src/main/resources/openapi/tax-calc-api-v2.json</inputSpec>
                             <generatorName>java</generatorName>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
