@@ -32,7 +32,7 @@ import static org.killbill.billing.plugin.vertex.VertexActivator.PLUGIN_NAME;
 
 public class VertexHealthCheckTest extends VertexRemoteTestBase {
 
-    @Test
+    @Test(groups = "integration")
     public void getHealthStatus_ReturnsHealthy_WhenNoTenant() {
         VertexApiConfigurationHandler handler = new VertexApiConfigurationHandler(PLUGIN_NAME, null);
         VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(handler);
@@ -41,7 +41,7 @@ public class VertexHealthCheckTest extends VertexRemoteTestBase {
         Assert.assertTrue(healthStatus.isHealthy());
     }
 
-    @Test
+    @Test(groups = "integration")
     public void getHealthStatus_ReturnsUnHealthy_WhenVertexNotConfigured() {
         VertexApiConfigurationHandler handler = new VertexApiConfigurationHandler(PLUGIN_NAME, null);
         final VertexApiClient vertexApiClient = new VertexApiClient(new Properties());
@@ -55,7 +55,7 @@ public class VertexHealthCheckTest extends VertexRemoteTestBase {
         Assert.assertEquals(healthStatus.getDetails().get("message"), "health check failed");
     }
 
-    @Test
+    @Test(groups = "integration")
     public void getHealthStatus_ReturnsHealthy_WhenVertexConfigured() {
         VertexApiConfigurationHandler handler = new VertexApiConfigurationHandler(PLUGIN_NAME, null);
         handler.setDefaultConfigurable(vertexApiClient);
