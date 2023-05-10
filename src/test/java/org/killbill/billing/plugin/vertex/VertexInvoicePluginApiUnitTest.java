@@ -124,7 +124,7 @@ public class VertexInvoicePluginApiUnitTest {
     @Test(groups = "fast")
     public void testGetAdditionalInvoiceItemsWhenVertexSkipPropertyPresent() throws Exception {
         //given
-        final Iterable<PluginProperty> properties = Collections.singletonList(new PluginProperty(VertexConfigProperties.VERTEX_SKIP, "anyValue", false));
+        final Iterable<PluginProperty> properties = Collections.singletonList(new PluginProperty("VERTEX_SKIP", "anyValue", false));
 
         //when
         List<InvoiceItem> result = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, properties, callContext);
