@@ -206,7 +206,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                       final Iterable<PluginProperty> pluginProperties,
                                                       final UUID kbTenantId,
                                                       final Map<UUID, Iterable<InvoiceItem>> kbInvoiceItems,
-                                                      final LocalDate utcToday) throws ApiException, SQLException {
+                                                      final LocalDate taxItemsDate) throws ApiException, SQLException {
         final VertexApiClient vertexApiClient = vertexApiConfigurationHandler.getConfigurable(kbTenantId);
 
         final SaleRequestType taxRequest = toTaxRequest(account,
@@ -216,7 +216,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                         originalInvoiceReferenceCode,
                                                         dryRun,
                                                         pluginProperties,
-                                                        utcToday,
+                                                        taxItemsDate,
                                                         vertexApiClient.getCompanyName(),
                                                         vertexApiClient.getCompanyDivision());
 
@@ -293,7 +293,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                          @Nullable final String originalInvoiceReferenceCode,
                                          final boolean dryRun,
                                          final Iterable<PluginProperty> pluginProperties,
-                                         final LocalDate utcToday, final String companyName, final String companyDivision) {
+                                         final LocalDate taxItemsDate, final String companyName, final String companyDivision) {
         Preconditions.checkState((originalInvoiceReferenceCode == null && (adjustmentItems == null || adjustmentItems.isEmpty())) ||
                                  (originalInvoiceReferenceCode != null && (adjustmentItems != null && !adjustmentItems.isEmpty())),
                                  "Invalid combination of originalInvoiceReferenceCode %s and adjustments %s", originalInvoiceReferenceCode, adjustmentItems);
@@ -319,7 +319,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         taxRequest.setDocumentNumber(docNumber);
 
         taxRequest.setDocumentDate(java.time.LocalDate.of(invoice.getInvoiceDate().getYear(), invoice.getInvoiceDate().getMonthOfYear(), invoice.getInvoiceDate().getDayOfMonth()));
-        taxRequest.setPostingDate(java.time.LocalDate.of(utcToday.getYear(), utcToday.getMonthOfYear(), utcToday.getDayOfMonth()));//fixme is this ok?
+        taxRequest.setPostingDate(java.time.LocalDate.of(taxItemsDate.getYear(), taxItemsDate.getMonthOfYear(), taxItemsDate.getDayOfMonth()));
 
         CurrencyType currencyType = new CurrencyType();
         currencyType.setIsoCurrencyCodeAlpha(invoice.getCurrency().name());
@@ -329,9 +329,10 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         LocationType customerDestination = toAddress(account, pluginProperties);
         customerType.setDestination(customerDestination);
         CustomerCodeType code = new CustomerCodeType();
-        code.setValue(MoreObjects.firstNonNull(account.getExternalKey(), account.getId()).toString());//fixme is this ok?
+        code.setValue(MoreObjects.firstNonNull(account.getExternalKey(), account.getId()).toString());
         customerType.setCustomerCode(code);
-        //taxRequest.setCustomer(customerType); Need to set customer for each of the line items.
+
+        taxRequest.setCustomer(customerType);
 
         SellerType sellerType = new SellerType();
         sellerType.setCompany(companyName);
@@ -345,7 +346,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             lineItemList.add(toLine(invoiceItem,
                                     adjustmentItems == null ? null : adjustmentItems.get(invoiceItem.getId()),
                                     invoice.getInvoiceDate(),
-                                    pluginProperties, lineNumber, customerType));
+                                    pluginProperties, lineNumber));
             lineNumber++;
         }
 
@@ -358,11 +359,11 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                            @Nullable final Iterable<InvoiceItem> adjustmentItems,
                                            @Nullable final LocalDate originalInvoiceDate,
                                            final Iterable<PluginProperty> pluginProperties,
-                                           long lineNumber, CustomerType customer) {
+                                           long lineNumber) {
         final SaleRequestLineItemType lineItemModel = new SaleRequestLineItemType();
         lineItemModel.setLineItemId(taxableItem.getId().toString());
         lineItemModel.setLineItemNumber(lineNumber);
-        // lineItemModel.setTaxDate();fixme do we need this and which field take
+        // lineItemModel.setTaxDate(); //set to taxItemsDate if needed
 
         // SKU
         Product product = new Product();
@@ -397,8 +398,6 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
         flexibleFields.addFlexibleCodeFieldsItem(field20);
         lineItemModel.setFlexibleFields(flexibleFields);
-
-        lineItemModel.setCustomer(customer);
 
         return lineItemModel;
     }
