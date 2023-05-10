@@ -61,34 +61,24 @@ public class VertexInvoicePluginApiUnitTest {
 
     @Mock
     private VertexApiConfigurationHandler vertexApiConfigurationHandler;
-
     @Mock
     private VertexApiClient vertexApiClient;
-
     @Mock
     private VertexDao dao;
-
     @Mock
     private InvoiceContext invoiceContext;
-
     @Mock
     private CallContext callContext;
-
     @Mock
     private Invoice invoice;
-
     @Mock
     private OSGIKillbillAPI killbillAPI;
-
     @Mock
     private AccountUserApi accountUserApi;
-
     @Mock
     private CustomFieldUserApi customFieldUserApi;
-
     @Mock
     private Account account;
-
     @Mock
     private VertexTaxCalculator vertexTaxCalculator;
 

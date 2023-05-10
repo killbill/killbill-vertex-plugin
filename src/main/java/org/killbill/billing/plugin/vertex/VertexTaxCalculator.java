@@ -70,7 +70,6 @@ import com.google.common.collect.Multimap;
 public class VertexTaxCalculator extends PluginTaxCalculator {
 
     public static final String TAX_CODE = "taxCode";
-    public static final String CUSTOMER_USAGE_TYPE = "customerUsageType";
     public static final String LOCATION_ADDRESS1 = "locationAddress1";
     public static final String LOCATION_ADDRESS2 = "locationAddress2";
     public static final String LOCATION_CITY = "locationCity";
