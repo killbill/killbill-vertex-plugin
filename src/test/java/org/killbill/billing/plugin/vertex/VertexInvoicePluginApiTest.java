@@ -53,6 +53,7 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
 
     private OSGIKillbillAPI osgiKillbillAPI;
     private Collection<PluginProperty> pluginProperties;
+    private VertexTaxCalculator vertexTaxCalculator;
     private VertexInvoicePluginApi vertexInvoicePluginApi;
     private Account account;
     private CallContext callContext;
@@ -92,9 +93,11 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         final Clock clock = new DefaultClock();
         final VertexApiConfigurationHandler avaTaxConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
+        vertexTaxCalculator = new VertexTaxCalculator(avaTaxConfigurationHandler, dao, clock, osgiKillbillAPI);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
+                                                            vertexTaxCalculator,
                                                             dao,
                                                             clock);
 
@@ -182,9 +185,11 @@ public class VertexInvoicePluginApiTest extends VertexRemoteTestBase {
         final Clock clock = new DefaultClock();
         final VertexApiConfigurationHandler avaTaxConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
+        vertexTaxCalculator = new VertexTaxCalculator(avaTaxConfigurationHandler, dao, clock, osgiKillbillAPI);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
+                                                            vertexTaxCalculator,
                                                             dao,
                                                             clock);
 
