@@ -29,7 +29,6 @@ import org.jooby.mvc.Path;
 import org.killbill.billing.plugin.core.resources.PluginHealthcheck;
 import org.killbill.billing.tenant.api.Tenant;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.google.inject.Inject;
 
 @Singleton
@@ -44,7 +43,7 @@ public class VertexHealthcheckServlet extends PluginHealthcheck {
     }
 
     @GET
-    public Result check(@Local @Named("killbill_tenant") final Optional<Tenant> tenant) throws JsonProcessingException {
+    public Result check(@Local @Named("killbill_tenant") final Optional<Tenant> tenant) {
         return check(healthcheck, tenant.orElse(null), null);
     }
 }
