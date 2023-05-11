@@ -1,7 +1,7 @@
 Vertex plugin
 =============
 
-Kill Bill tax plugin for [Vertex](https://www.vertexinc.com/).
+Kill Bill tax plugin for [Vertex](https://www.vertexinc.com/) using [Vertex Indirect Tax O Series REST APIs v2](https://tax-calc-api.vertexcloud.com/).
 
 This integration delegates computation of sales taxes to Vertex, which will appear directly on Kill Bill invoices.
 
@@ -20,15 +20,14 @@ Configuration
 
 The following properties are required:
 
-* `org.killbill.billing.plugin.vertex.url`: Vertex endpoint
+* `org.killbill.billing.plugin.vertex.url`: Vertex api base url
+* `org.killbill.billing.plugin.vertex.clientId`: Vertex client id
+* `org.killbill.billing.plugin.vertex.clientSecret`: Vertex client secret
 
 The following properties are optional:
 
-* `org.killbill.billing.plugin.vertex.proxyHost`: proxy host
-* `org.killbill.billing.plugin.vertex.proxyPort`: proxy port
-* `org.killbill.billing.plugin.vertex.strictSSL`: if false, unverified certificates are trusted
-* `org.killbill.billing.plugin.vertex.connectTimeout`
-* `org.killbill.billing.plugin.vertex.readTimeout`
+* `org.killbill.billing.plugin.vertex.companyName`: company name
+* `org.killbill.billing.plugin.vertex.companyDivision`: company division
 
 These properties can be specified globally via System Properties or on a per tenant basis:
 
@@ -41,7 +40,7 @@ curl -v \
      -H 'X-Killbill-CreatedBy: admin' \
      -H 'Content-Type: text/plain' \
      -d 'org.killbill.billing.plugin.vertex.url=XXX
-org.killbill.billing.plugin.vertex.accountNumber=YYY
-org.killbill.billing.plugin.vertex.licenseKey=ZZZ' \
+org.killbill.billing.plugin.vertex.clientId=YYY
+org.killbill.billing.plugin.vertex.clientSecret=ZZZ' \
      http://127.0.0.1:8080/1.0/kb/tenants/uploadPluginConfig/killbill-vertex
 ```
