@@ -176,9 +176,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             kbInvoiceItems.putAll(adjustmentItems);
         }
         for (final InvoiceItem taxableItem : taxableItems.values()) {
-            if (kbInvoiceItems.get(taxableItem.getId()) == null) {
-                kbInvoiceItems.put(taxableItem.getId(), ImmutableList.of());
-            }
+            kbInvoiceItems.computeIfAbsent(taxableItem.getId(), k -> ImmutableList.of());
         }
         // Don't use clock.getUTCToday(), see https://github.com/killbill/killbill-platform/issues/4
         final LocalDate taxItemsDate = newInvoice.getInvoiceDate();
@@ -238,9 +236,10 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             final Collection<InvoiceItem> invoiceItems = new LinkedList<>();
             for (final OwnerResponseLineItemType ownerResponseLineItem : taxResult.getData().getLineItems()) {
                 // See convention in toLine() below
-                final UUID invoiceItemId = UUID.fromString(ownerResponseLineItem.getLineItemId());
+                final UUID invoiceItemId = ownerResponseLineItem.getLineItemId() != null ? UUID.fromString(ownerResponseLineItem.getLineItemId()) : null;
                 final InvoiceItem adjustmentItem;
                 if (adjustmentItems != null &&
+                    invoiceItemId != null &&
                     adjustmentItems.get(invoiceItemId) != null &&
                     adjustmentItems.get(invoiceItemId).size() == 1) {
                     // Could be a repair or an item adjustment: in either case, we use it to compute the service period
@@ -267,7 +266,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                    final OwnerResponseLineItemType transactionLineModel,
                                                    @Nullable final InvoiceItem adjustmentItem) {
         if (transactionLineModel.getTaxes() == null || transactionLineModel.getTaxes().isEmpty()) {
-            final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, BigDecimal.valueOf(transactionLineModel.getTotalTax()), "Tax");
+            final BigDecimal totalTax = transactionLineModel.getTotalTax() != null ? BigDecimal.valueOf(transactionLineModel.getTotalTax()) : null;
+            final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, totalTax, "Tax");
             if (taxItem == null) {
                 return ImmutableList.of();
             } else {
@@ -277,7 +277,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             final Collection<InvoiceItem> invoiceItems = new LinkedList<>();
             for (final TaxesType transactionLineDetailModel : transactionLineModel.getTaxes()) {
                 final String description = MoreObjects.firstNonNull(transactionLineDetailModel.getTaxCode(), MoreObjects.firstNonNull(transactionLineDetailModel.getVertexTaxCode(), "Tax"));
-                final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, BigDecimal.valueOf(transactionLineDetailModel.getCalculatedTax()), description);
+                final BigDecimal calculatedTax = transactionLineDetailModel.getCalculatedTax() != null ? BigDecimal.valueOf(transactionLineDetailModel.getCalculatedTax()) : null;
+                final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, calculatedTax, description);
                 if (taxItem != null) {
                     invoiceItems.add(taxItem);
                 }
