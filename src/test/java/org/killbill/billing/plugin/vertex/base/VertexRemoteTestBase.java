@@ -63,13 +63,13 @@ public abstract class VertexRemoteTestBase {
             properties = TestUtils.loadProperties(VERTEX_PROPERTIES);
         } catch (final RuntimeException ignored) {
             // Look up environment variables instead
+            properties = new Properties();
             properties.put(VERTEX_OSERIES_URL_PROPERTY, System.getenv("VERTEX_URL"));
             properties.put(VERTEX_OSERIES_CLIENT_ID_PROPERTY, System.getenv("VERTEX_CLIENT_ID"));
             properties.put(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY, System.getenv("VERTEX_CLIENT_SECRET"));
 
             properties.put(VERTEX_OSERIES_COMPANY_NAME_PROPERTY, System.getenv("VERTEX_COMPANY_NAME"));
             properties.put(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, System.getenv("VERTEX_COMPANY_DIVISION"));
-
         }
 
         buildVertexApiClient(properties);
