@@ -15,6 +15,8 @@
  * under the License.
  */
 
+package org.killbill.billing.plugin.vertex;
+
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -32,9 +34,6 @@ import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.TestUtils;
 import org.killbill.billing.plugin.api.PluginTenantContext;
-import org.killbill.billing.plugin.vertex.VertexActivator;
-import org.killbill.billing.plugin.vertex.VertexApiConfigurationHandler;
-import org.killbill.billing.plugin.vertex.VertexTaxCalculator;
 import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.killbill.clock.Clock;
@@ -121,7 +120,7 @@ public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
 
         // Check the created items
         checkCreatedItems(ImmutableMap.of(taxableItem1.getId(), InvoiceItemType.TAX,
-                                                                 taxableItem2.getId(), InvoiceItemType.TAX), initialTaxItems, invoice);
+                                          taxableItem2.getId(), InvoiceItemType.TAX), initialTaxItems, invoice);
 
         // Verify idempotency
         Assert.assertEquals(calculator.compute(account, invoice, false, pluginProperties, tenantContext).size(), 0);
@@ -154,7 +153,7 @@ public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
 
         // Check the created items
         checkCreatedItems(ImmutableMap.of(taxableItem2.getId(), InvoiceItemType.TAX,
-                                                                 taxableItem3.getId(), InvoiceItemType.TAX), adjustments2, adjustmentInvoice);
+                                          taxableItem3.getId(), InvoiceItemType.TAX), adjustments2, adjustmentInvoice);
 
         // Verify idempotency
         Assert.assertEquals(calculator.compute(account, adjustmentInvoice, false, pluginProperties, tenantContext).size(), 0);
