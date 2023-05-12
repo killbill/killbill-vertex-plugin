@@ -23,6 +23,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.joda.time.LocalDate;
 import org.killbill.billing.account.api.Account;
 import org.killbill.billing.catalog.api.Currency;
@@ -42,10 +44,15 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeClass;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.testng.AssertJUnit.assertEquals;
 
 public class VertexTaxCalculatorTest {
@@ -81,6 +88,13 @@ public class VertexTaxCalculatorTest {
         given(invoice.getInvoiceDate()).willReturn(INVOICE_DATE);
         given(invoice.getCurrency()).willReturn(Currency.USD);
         given(account.getExternalKey()).willReturn("externalKey");
+        given(clock.getUTCNow()).willReturn(new DateTime(DateTimeZone.UTC));
+        given(account.getId()).willReturn(UUID.randomUUID());
+    }
+
+    @BeforeMethod(groups = "fast")
+    public void clearInvocations() {
+        Mockito.clearInvocations(vertexDao);
     }
 
     @Test(groups = "fast")
@@ -107,6 +121,7 @@ public class VertexTaxCalculatorTest {
                 account, invoice, false, pluginProperties, tenantContext);
 
         //then
+        verify(vertexDao).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
         assertEquals(0, result.size());
     }
 
@@ -145,6 +160,8 @@ public class VertexTaxCalculatorTest {
                 account, invoice, false, pluginProperties, tenantContext);
 
         //then
+        verify(vertexDao, atLeastOnce()).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
+
         assertEquals(1, result.size());
         assertEquals(BigDecimal.valueOf(MOCK_TAX_AMOUNT_1_01), result.get(0).getAmount());
 
@@ -154,5 +171,44 @@ public class VertexTaxCalculatorTest {
         assertEquals(INVOICE_ID, result.get(0).getInvoiceId());
         assertEquals(INVOICE_DATE, result.get(0).getStartDate());
         assertEquals(INVOICE_DATE.plusMonths(1), result.get(0).getEndDate());
+    }
+
+    @Test(groups = "fast")
+    public void testComputeDryRun() throws Exception {
+        //given
+        final Iterable<PluginProperty> pluginProperties = Collections.emptyList();
+
+        InvoiceItem taxableInvoiceItem = Mockito.mock(InvoiceItem.class);
+        given(taxableInvoiceItem.getAmount()).willReturn(new BigDecimal(1));
+        given(taxableInvoiceItem.getInvoiceItemType()).willReturn(InvoiceItemType.RECURRING);
+        given(taxableInvoiceItem.getInvoiceId()).willReturn(INVOICE_ID);
+        given(taxableInvoiceItem.getId()).willReturn(INVOICE_ID);
+        given(taxableInvoiceItem.getStartDate()).willReturn(INVOICE_DATE);
+        given(taxableInvoiceItem.getEndDate()).willReturn(INVOICE_DATE.plusMonths(1));
+
+        final List<InvoiceItem> invoiceItems = Arrays.asList(taxableInvoiceItem);
+        given(invoice.getInvoiceItems()).willReturn(invoiceItems);
+
+        given(vertexDao.getSuccessfulResponses(any(UUID.class), any(UUID.class))).willReturn(Collections.emptyList());
+
+        ApiSuccessResponseTransactionResponseType taxResponse = Mockito.mock(ApiSuccessResponseTransactionResponseType.class);
+        ApiSuccessResponseTransactionResponseTypeData apiResponseData = Mockito.mock(ApiSuccessResponseTransactionResponseTypeData.class);
+
+        OwnerResponseLineItemType responseLineItem = Mockito.mock(OwnerResponseLineItemType.class);
+        given(responseLineItem.getLineItemId()).willReturn(INVOICE_ID.toString());
+        given(responseLineItem.getTotalTax()).willReturn(MOCK_TAX_AMOUNT_1_01);
+
+        List<OwnerResponseLineItemType> responseLineItemTypeList = Arrays.asList(responseLineItem);
+        given(apiResponseData.getLineItems()).willReturn(responseLineItemTypeList);
+        given(taxResponse.getData()).willReturn(apiResponseData);
+        given(vertexApiClient.calculateTaxes(any(SaleRequestType.class))).willReturn(taxResponse);
+
+        //when
+        vertexTaxCalculator.compute(
+                account, invoice, true, pluginProperties, tenantContext);
+
+        //then
+        verify(vertexDao, times(0))
+                .addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
     }
 }
