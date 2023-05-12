@@ -52,7 +52,7 @@ public class VertexTaxCalculatorTest {
 
     private static final UUID INVOICE_ID = UUID.randomUUID();
     private static final LocalDate INVOICE_DATE = LocalDate.now();
-    private static final double TAX_AMOUNT = 1.01;
+    private static final double MOCK_TAX_AMOUNT_1_01 = 1.01;
 
     @Mock
     private Account account;
@@ -133,7 +133,7 @@ public class VertexTaxCalculatorTest {
 
         OwnerResponseLineItemType responseLineItem = Mockito.mock(OwnerResponseLineItemType.class);
         given(responseLineItem.getLineItemId()).willReturn(INVOICE_ID.toString());
-        given(responseLineItem.getTotalTax()).willReturn(TAX_AMOUNT);
+        given(responseLineItem.getTotalTax()).willReturn(MOCK_TAX_AMOUNT_1_01);
 
         List<OwnerResponseLineItemType> responseLineItemTypeList = Arrays.asList(responseLineItem);
         given(apiResponseData.getLineItems()).willReturn(responseLineItemTypeList);
@@ -146,7 +146,7 @@ public class VertexTaxCalculatorTest {
 
         //then
         assertEquals(1, result.size());
-        assertEquals(BigDecimal.valueOf(TAX_AMOUNT), result.get(0).getAmount());
+        assertEquals(BigDecimal.valueOf(MOCK_TAX_AMOUNT_1_01), result.get(0).getAmount());
         assertEquals(INVOICE_ID, result.get(0).getInvoiceId());
         assertEquals(InvoiceItemType.TAX, result.get(0).getInvoiceItemType());
         assertEquals("Tax", result.get(0).getDescription());
