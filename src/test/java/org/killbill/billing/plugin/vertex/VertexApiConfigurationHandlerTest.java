@@ -26,7 +26,7 @@ import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_O
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
-public class VertexApiConfigurationHandlerUnitTest {
+public class VertexApiConfigurationHandlerTest {
 
     private final VertexApiConfigurationHandler vertexApiConfigurationHandler =
             new VertexApiConfigurationHandler("pluginName", null);

@@ -21,9 +21,9 @@ import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class OAuthClientTest extends VertexRemoteTestBase {
+public class OAuthClientITest extends VertexRemoteTestBase {
 
-    @Test
+    @Test(groups = "integration")
     public void test() {
         OAuthClient client = new OAuthClient();
 

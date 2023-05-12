@@ -17,10 +17,7 @@
 
 package org.killbill.billing.plugin.vertex.health;
 
-import java.util.Properties;
-
 import org.killbill.billing.osgi.api.Healthcheck.HealthStatus;
-import org.killbill.billing.plugin.vertex.VertexApiClient;
 import org.killbill.billing.plugin.vertex.VertexApiConfigurationHandler;
 import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
 import org.killbill.billing.tenant.api.Tenant;
@@ -30,30 +27,7 @@ import org.testng.annotations.Test;
 
 import static org.killbill.billing.plugin.vertex.VertexActivator.PLUGIN_NAME;
 
-public class VertexHealthCheckTest extends VertexRemoteTestBase {
-
-    @Test(groups = "integration")
-    public void getHealthStatus_ReturnsHealthy_WhenNoTenant() {
-        VertexApiConfigurationHandler handler = new VertexApiConfigurationHandler(PLUGIN_NAME, null);
-        VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(handler);
-
-        HealthStatus healthStatus = vertexHealthcheck.getHealthStatus(null, null);
-        Assert.assertTrue(healthStatus.isHealthy());
-    }
-
-    @Test(groups = "integration")
-    public void getHealthStatus_ReturnsUnHealthy_WhenVertexNotConfigured() {
-        VertexApiConfigurationHandler handler = new VertexApiConfigurationHandler(PLUGIN_NAME, null);
-        final VertexApiClient vertexApiClient = new VertexApiClient(new Properties());
-        handler.setDefaultConfigurable(vertexApiClient);
-
-        VertexHealthcheck vertexHealthcheck = new VertexHealthcheck(handler);
-        Tenant tenant = Mockito.mock(Tenant.class);
-
-        HealthStatus healthStatus = vertexHealthcheck.getHealthStatus(tenant, null);
-        Assert.assertFalse(healthStatus.isHealthy());
-        Assert.assertEquals(healthStatus.getDetails().get("message"), "health check failed");
-    }
+public class VertexHealthCheckITest extends VertexRemoteTestBase {
 
     @Test(groups = "integration")
     public void getHealthStatus_ReturnsHealthy_WhenVertexConfigured() {

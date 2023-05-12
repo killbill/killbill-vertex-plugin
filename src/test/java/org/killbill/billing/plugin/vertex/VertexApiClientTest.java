@@ -30,7 +30,7 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 //Currently only unhappy path is covered
-public class VertexApiClientUnitTest {
+public class VertexApiClientTest {
 
     @Mock
     private Properties properties;
