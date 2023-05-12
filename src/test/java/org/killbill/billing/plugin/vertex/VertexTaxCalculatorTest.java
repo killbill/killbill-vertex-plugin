@@ -48,7 +48,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 import static org.testng.AssertJUnit.assertEquals;
 
-public class VertexTaxCalculatorUnitTest {
+public class VertexTaxCalculatorTest {
 
     private static final UUID INVOICE_ID = UUID.randomUUID();
     private static final LocalDate INVOICE_DATE = LocalDate.now();
