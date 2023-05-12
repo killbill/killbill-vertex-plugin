@@ -147,9 +147,11 @@ public class VertexTaxCalculatorTest {
         //then
         assertEquals(1, result.size());
         assertEquals(BigDecimal.valueOf(MOCK_TAX_AMOUNT_1_01), result.get(0).getAmount());
-        assertEquals(INVOICE_ID, result.get(0).getInvoiceId());
+
         assertEquals(InvoiceItemType.TAX, result.get(0).getInvoiceItemType());
         assertEquals("Tax", result.get(0).getDescription());
+
+        assertEquals(INVOICE_ID, result.get(0).getInvoiceId());
         assertEquals(INVOICE_DATE, result.get(0).getStartDate());
         assertEquals(INVOICE_DATE.plusMonths(1), result.get(0).getEndDate());
     }
