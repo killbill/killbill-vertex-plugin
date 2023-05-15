@@ -99,12 +99,10 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                      final boolean dryRun,
                                      final Iterable<PluginProperty> pluginProperties,
                                      final TenantContext tenantContext) throws Exception {
-        // Retrieve what we've already taxed (Tax Rates API) or sent (AvaTax)
+        // Retrieve what we've already taxed
         final List<VertexResponsesRecord> responses = dao.getSuccessfulResponses(newInvoice.getId(), tenantContext.getTenantId());
         final Map<UUID, Set<UUID>> alreadyTaxedItemsWithAdjustments = dao.getTaxedItemsWithAdjustments(responses);
 
-        // For AvaTax, we can only send one type of document at a time (Sales or Return). In some cases, we need to send both, for example
-        // in the case of repairs (adjustment for the original item, tax for the new item -- all generated items would be on the new invoice)
         final List<NewItemToTax> newItemsToTax = computeTaxItems(newInvoice, alreadyTaxedItemsWithAdjustments, tenantContext);
         final Map<UUID, InvoiceItem> salesTaxItems = new HashMap<>();
         for (final NewItemToTax newItemToTax : newItemsToTax) {
@@ -170,7 +168,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                          final boolean dryRun,
                                          final Iterable<PluginProperty> pluginProperties,
                                          final UUID kbTenantId) throws Exception {
-        // Keep track of the invoice items and adjustments we've already taxed (Tax Rates API) or sent (AvaTax)
+        // Keep track of the invoice items and adjustments we've already taxed
         final Map<UUID, Iterable<InvoiceItem>> kbInvoiceItems = new HashMap<>();
         if (adjustmentItems != null) {
             kbInvoiceItems.putAll(adjustmentItems);
