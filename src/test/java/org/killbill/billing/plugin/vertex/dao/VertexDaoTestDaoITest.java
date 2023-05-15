@@ -42,7 +42,7 @@ import org.testng.annotations.Test;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
-public class VertexDaoTestDao extends VertexRemoteTestBase {
+public class VertexDaoTestDaoITest extends VertexRemoteTestBase {
 
     @Test(groups = "slow")
     public void testCreateReadResponses() throws Exception {

@@ -54,8 +54,6 @@ import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_SKIP;
-
 public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
     @VisibleForTesting
@@ -82,7 +80,7 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
                                                        final boolean dryRun,
                                                        final Iterable<PluginProperty> properties,
                                                        final CallContext context) {
-        if (PluginProperties.findPluginPropertyValue(VERTEX_SKIP, properties) != null) {
+        if (PluginProperties.findPluginPropertyValue("VERTEX_SKIP", properties) != null) {
             return ImmutableList.of();
         }
 
@@ -184,15 +182,6 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
             if (productName == null) {
                 continue;
             }
-
-           /* if (productToTaxCodeCache.get(productName) == null) {fixme do we need to store taxcodes in DB?
-                try {
-                    final String taxCode = dao.getTaxCode(productName, context.getTenantId());
-                    productToTaxCodeCache.put(productName, taxCode);
-                } catch (final SQLException e) {
-                    continue;
-                }
-            }*/
 
             final String taxCode = productToTaxCodeCache.get(productName);
             if (taxCode != null) {

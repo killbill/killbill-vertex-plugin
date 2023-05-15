@@ -21,13 +21,13 @@ import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
 import org.testng.Assert;
 import org.testng.annotations.Test;
 
-public class OAuthClientTest extends VertexRemoteTestBase {
+public class OAuthClientITest extends VertexRemoteTestBase {
 
-    @Test
+    @Test(groups = "integration")
     public void test() {
         OAuthClient client = new OAuthClient();
 
-        String token = client.getToken(url, clientId, clientSecret).getAccessToken();
+        String token = client.getToken(getUrl(), getClientId(), getClientSecret()).getAccessToken();
         Assert.assertNotNull(token);
     }
 

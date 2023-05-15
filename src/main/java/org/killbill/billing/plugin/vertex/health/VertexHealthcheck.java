@@ -24,18 +24,11 @@ import javax.annotation.Nullable;
 import org.killbill.billing.osgi.api.Healthcheck;
 import org.killbill.billing.plugin.vertex.VertexApiClient;
 import org.killbill.billing.plugin.vertex.VertexApiConfigurationHandler;
-import org.killbill.billing.plugin.vertex.gen.ApiException;
 import org.killbill.billing.plugin.vertex.gen.client.model.AddressLookupRequestType;
-import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTaxAreaLookupResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.PostalAddressType;
-import org.killbill.billing.plugin.vertex.gen.health.HealthCheckService;
 import org.killbill.billing.tenant.api.Tenant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.vertexinc.ws.healthcheck.generated.LoginType;
-import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckRequest;
-import com.vertexinc.ws.healthcheck.generated.PerformHealthCheckResponseType;
 
 import static org.killbill.billing.plugin.vertex.VertexApiClient.NOT_CONFIGURED_MSG;
 

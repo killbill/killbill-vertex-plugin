@@ -41,16 +41,10 @@ public abstract class VertexRemoteTestBase {
     // To run these tests, you need a properties file in the classpath (e.g. src/test/resources/vertex.properties)
     // See README.md for details on the required properties
     private static final String VERTEX_PROPERTIES = "vertex.properties";
-    protected Properties properties;
 
+    protected Properties properties;
     protected VertexApiClient vertexApiClient;
     protected VertexDao dao;
-
-    protected String url;
-    protected String clientId;
-    protected String clientSecret;
-    protected String companyName;
-    protected String companyDivision;
 
     @BeforeSuite(groups = {"slow", "integration"})
     public void setUpBeforeSuite() throws Exception {
@@ -65,29 +59,18 @@ public abstract class VertexRemoteTestBase {
 
     @BeforeMethod(groups = "integration")
     public void setUpBeforeMethod2() throws Exception {
-        Properties properties = new Properties();
         try {
             properties = TestUtils.loadProperties(VERTEX_PROPERTIES);
         } catch (final RuntimeException ignored) {
             // Look up environment variables instead
+            properties = new Properties();
             properties.put(VERTEX_OSERIES_URL_PROPERTY, System.getenv("VERTEX_URL"));
             properties.put(VERTEX_OSERIES_CLIENT_ID_PROPERTY, System.getenv("VERTEX_CLIENT_ID"));
             properties.put(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY, System.getenv("VERTEX_CLIENT_SECRET"));
 
             properties.put(VERTEX_OSERIES_COMPANY_NAME_PROPERTY, System.getenv("VERTEX_COMPANY_NAME"));
             properties.put(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, System.getenv("VERTEX_COMPANY_DIVISION"));
-
         }
-
-        this.url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
-        this.clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
-        this.clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
-
-        //fixme: do we need this properties duplication?
-        this.companyName = properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY);
-        this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
-
-        this.properties = properties;
 
         buildVertexApiClient(properties);
     }
@@ -97,15 +80,26 @@ public abstract class VertexRemoteTestBase {
         EmbeddedDbHelper.instance().stopDB();
     }
 
+    protected String getUrl() {
+        return properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
+    }
+
+    protected String getClientId() {
+        return properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
+    }
+
+    protected String getClientSecret() {
+        return properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
+    }
+
     private void buildVertexApiClient(Properties properties) {
         OAuthClient oAuthClient = new OAuthClient();
 
         ApiClient apiClient = new ApiClient();
-        apiClient.setBasePath(url + "/vertex-ws/");
-        String token = oAuthClient.getToken(url, clientId, clientSecret).getAccessToken();
+        apiClient.setBasePath(getUrl() + "/vertex-ws/");
+        String token = oAuthClient.getToken(getUrl(), getClientId(), getClientSecret()).getAccessToken();
         apiClient.setAccessToken(token);
 
         this.vertexApiClient = new VertexApiClient(properties);
     }
-
 }

@@ -20,7 +20,6 @@ package org.killbill.billing.plugin.vertex;
 import java.util.Properties;
 
 import org.jooq.tools.StringUtils;
-import org.killbill.billing.osgi.api.Healthcheck.HealthStatus;
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
 import org.killbill.billing.plugin.vertex.gen.client.CalculateTaxApi;
@@ -30,9 +29,7 @@ import org.killbill.billing.plugin.vertex.gen.client.model.AddressLookupRequestT
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessRemoveTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTaxAreaLookupResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
-import org.killbill.billing.plugin.vertex.gen.client.model.PostalAddressType;
 import org.killbill.billing.plugin.vertex.gen.client.model.SaleRequestType;
-import org.killbill.billing.plugin.vertex.gen.client.model.TaxAreaIdLookupRequestType;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
