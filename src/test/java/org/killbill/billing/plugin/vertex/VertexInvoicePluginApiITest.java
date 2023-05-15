@@ -66,12 +66,6 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, "328", false));
         pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY, "Kill Bill Parent", false));
 
-        // California Nexus must be enabled in your account for the test to pass
-        // As of July 2021, tax rates are:
-        //   CA STATE TAX: 0.06
-        //   CA COUNTY TAX: 0.0025
-        //   CA SPECIAL TAX (SAN FRANCISCO CO LOCAL TAX SL): 0.01
-        //   CA SPECIAL TAX (SAN FRANCISCO COUNTY DISTRICT TAX SP): 0.01375
         account = TestUtils.buildAccount(Currency.USD, "45 Fremont Street", null, "San Francisco", "CA", "94105", "US");
 
         callContext = new PluginCallContext(VertexActivator.PLUGIN_NAME, clock.getUTCNow(), account.getId(), UUID.randomUUID());
@@ -91,10 +85,10 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
     public void testItemAdjustments() {
 
         final Clock clock = new DefaultClock();
-        final VertexApiConfigurationHandler avaTaxConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
-        avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
-        vertexTaxCalculator = new VertexTaxCalculator(avaTaxConfigurationHandler, dao, clock, osgiKillbillAPI);
-        vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
+        final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
+        vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
+        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
+        vertexInvoicePluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
                                                             vertexTaxCalculator,
@@ -160,9 +154,6 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         final InvoiceItem itemAdjustment3 = TestUtils.buildInvoiceItem(invoice, InvoiceItemType.ITEM_ADJ, new BigDecimal("-50"), taxableItem1.getId());
         invoiceItems.add(itemAdjustment3);
         additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, callContext);
-        // TAX expected (total -$4.32)
-        // Note: due to rounding, more tax is returned than initially taxed (the value comes straight from AvaTax).
-        // To avoid this, in case of multiple item adjustments, you might have to return tax manually in AvaTax.
         checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
         /*
@@ -183,10 +174,10 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
     public void testRepair() throws Exception {
 
         final Clock clock = new DefaultClock();
-        final VertexApiConfigurationHandler avaTaxConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
-        avaTaxConfigurationHandler.setDefaultConfigurable(vertexApiClient);
-        vertexTaxCalculator = new VertexTaxCalculator(avaTaxConfigurationHandler, dao, clock, osgiKillbillAPI);
-        vertexInvoicePluginApi = new VertexInvoicePluginApi(avaTaxConfigurationHandler,
+        final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
+        vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
+        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
+        vertexInvoicePluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
                                                             vertexTaxCalculator,
