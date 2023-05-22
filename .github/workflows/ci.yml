@@ -19,6 +19,6 @@ jobs:
       plugin_name: 'vertex'
       integration_tests_goal: 'test:plugins:vertex'
       ddl_file: 'src/main/resources/ddl.sql'
-      integration_tests_ref: 'vlaskhilkevich/killbill-integration-tests@itests-for-vertex-plugin'
+      integration_tests_ref: 'refs/heads/master'
     secrets:
       extra-env: '{ "VERTEX_URL": "${{ secrets.VERTEX_URL }}", "VERTEX_CLIENT_ID": "${{ secrets.VERTEX_CLIENT_ID }}", "VERTEX_CLIENT_SECRET": "${{ secrets.VERTEX_CLIENT_SECRET }}", "VERTEX_COMPANY_NAME": "${{ secrets.VERTEX_COMPANY_NAME }}", "VERTEX_COMPANY_DIVISION": "${{ secrets.VERTEX_COMPANY_DIVISION }}"}'
