@@ -130,9 +130,10 @@ public class VertexTaxCalculatorTest {
     public void testComputeReturnsEmptyIfNoDataInApiResponse() throws Exception {
         //given
         given(taxResponse.getData()).willReturn(null);
+        final boolean isDryRun = false;
 
         //when
-        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, false, Collections.emptyList(), tenantContext);
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
 
         //then
         verify(vertexDao).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
@@ -141,8 +142,11 @@ public class VertexTaxCalculatorTest {
 
     @Test(groups = "fast")
     public void testCompute() throws Exception {
+        //given
+        final boolean isDryRun = false;
+
         //when
-        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, false, Collections.emptyList(), tenantContext);
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
 
         //then
         verify(vertexDao, atLeastOnce()).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
@@ -161,8 +165,11 @@ public class VertexTaxCalculatorTest {
 
     @Test(groups = "fast")
     public void testComputeDryRun() throws Exception {
+        //given
+        final boolean isDryRun = true;
+
         //when
-        vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+        vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
 
         //then
         verify(vertexDao, times(0))
