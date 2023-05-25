@@ -41,8 +41,6 @@
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
         <jooq.version>3.14.15</jooq.version>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
         <osgi.private>org.killbill.billing.plugin.vertex.*</osgi.private>
     </properties>
     <dependencies>
