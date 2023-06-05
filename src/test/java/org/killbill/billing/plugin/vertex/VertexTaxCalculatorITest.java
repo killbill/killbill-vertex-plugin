@@ -51,17 +51,19 @@ public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
     private final Collection<PluginProperty> pluginProperties = new LinkedList<>();
     private final UUID tenantId = UUID.randomUUID();
     private final TenantContext tenantContext = new PluginTenantContext(null, tenantId);
+    private final Character CHAR_TO_CHECK_UTF8 = 'Ä';
 
     private Account account;
     private Account account2;
     private Account account3;
+
     private OSGIKillbillAPI osgiKillbillAPI;
 
     @BeforeMethod(groups = "integration")
     public void setUp() throws Exception {
         account = TestUtils.buildAccount(Currency.USD, "45 Fremont Street", null, "San Francisco", "CA", "94105", "US");
         account2 = TestUtils.buildAccount(Currency.USD, "118 N Clark St Ste 100", null, "San Francisco", "CA", "94105", "US");
-        account3 = TestUtils.buildAccount(Currency.USD, "118 N Clark St Ste 100", null, "Chicago", "IL", "60602", "US");
+        account3 = TestUtils.buildAccount(Currency.USD, "118 N Clark St Ste 100" + CHAR_TO_CHECK_UTF8, null, "Chicago", "IL", "60602", "US");
 
         osgiKillbillAPI = TestUtils.buildOSGIKillbillAPI(account);
         Mockito.when(osgiKillbillAPI.getInvoiceUserApi()).thenReturn(Mockito.mock(InvoiceUserApi.class));
