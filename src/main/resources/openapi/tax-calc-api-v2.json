@@ -49,7 +49,7 @@
         "operationId": "salePost",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/json; charset=UTF-8": {
               "schema": {
                 "$ref": "#/components/schemas/SaleRequestType"
               }
@@ -95,7 +95,7 @@
         "operationId": "purchasePost",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/json; charset=UTF-8": {
               "schema": {
                 "$ref": "#/components/schemas/PurchaseRequestType"
               }
@@ -143,7 +143,7 @@
         "operationId": "ownerPost",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/json; charset=UTF-8": {
               "schema": {
                 "$ref": "#/components/schemas/OwnerRequestType"
               }
@@ -250,7 +250,7 @@
         "operationId": "reversalPost",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/json; charset=UTF-8": {
               "schema": {
                 "$ref": "#/components/schemas/ReversalRequestType"
               }
@@ -343,7 +343,7 @@
         "operationId": "addressLookupPost",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/json; charset=UTF-8": {
               "schema": {
                 "$ref": "#/components/schemas/AddressLookupRequestType"
               }
@@ -388,7 +388,7 @@
         "operationId": "coordinatesLookupPost",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/json; charset=UTF-8": {
               "schema": {
                 "$ref": "#/components/schemas/CoordinatesLookupRequestType"
               }
@@ -433,7 +433,7 @@
         "operationId": "taxareaidLookupPost",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/json; charset=UTF-8": {
               "schema": {
                 "$ref": "#/components/schemas/TaxAreaIdLookupRequestType"
               }
@@ -478,7 +478,7 @@
         "operationId": "externalJurisdictionLookupPost",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/json; charset=UTF-8": {
               "schema": {
                 "$ref": "#/components/schemas/ExternalJurisdictionLookupRequestType"
               }
@@ -523,7 +523,7 @@
         "operationId": "findTaxareasLookupPost",
         "requestBody": {
           "content": {
-            "application/json": {
+            "application/json; charset=UTF-8": {
               "schema": {
                 "$ref": "#/components/schemas/FindTaxAreasRequestArray"
               }
