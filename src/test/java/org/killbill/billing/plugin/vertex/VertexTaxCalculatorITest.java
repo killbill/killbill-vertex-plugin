@@ -56,50 +56,60 @@ public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
     private Account account2;
     private Account account3;
     private OSGIKillbillAPI osgiKillbillAPI;
+    private VertexTaxCalculator calculator;
 
     @BeforeMethod(groups = "integration")
     public void setUp() throws Exception {
         account = TestUtils.buildAccount(Currency.USD, "45 Fremont Street", null, "San Francisco", "CA", "94105", "US");
         account2 = TestUtils.buildAccount(Currency.USD, "118 N Clark St Ste 100", null, "San Francisco", "CA", "94105", "US");
-        account3 = TestUtils.buildAccount(Currency.USD, "118 N Clark St Ste 100" + 'Ä', null, "Chicago", "IL", "60602", "US");
+        account3 = TestUtils.buildAccount(Currency.USD, "118 N Clark St Ste 100", null, "Chicago", "IL", "60602", "US");
 
         osgiKillbillAPI = TestUtils.buildOSGIKillbillAPI(account);
         Mockito.when(osgiKillbillAPI.getInvoiceUserApi()).thenReturn(Mockito.mock(InvoiceUserApi.class));
+
+        final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
+        vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
+
+        calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
     }
 
     @Test(groups = "integration")
     public void testVertexTaxCalculator() throws Exception {
-        final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
-        vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
-        final VertexTaxCalculator calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
-        testComputeItemsOverTime(calculator);
+        testComputeItemsOverTime(account, account2);
     }
 
     @Test(groups = "integration")
     public void testInvoiceItemAdjustmentOnNewInvoice() throws Exception {
-        final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
-        vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
-        final VertexTaxCalculator calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
-
+        //given
         final Invoice invoice = TestUtils.buildInvoice(account3);
         final InvoiceItem taxableItem1 = TestUtils.buildInvoiceItem(invoice, InvoiceItemType.EXTERNAL_CHARGE, new BigDecimal("100"), null);
         invoice.getInvoiceItems().add(taxableItem1);
         invoice.getInvoiceItems().add(TestUtils.buildInvoiceItem(invoice, InvoiceItemType.ITEM_ADJ, BigDecimal.ONE.negate(), taxableItem1.getId()));
 
-        // Compute the tax items
+        //when
         final List<InvoiceItem> initialTaxItems = calculator.compute(account3, invoice, false, pluginProperties, tenantContext);
-        Assert.assertEquals(dao.getSuccessfulResponses(invoice.getId(), tenantId).size(), 2);
 
-        // Check the created items
+        //then
+        Assert.assertEquals(dao.getSuccessfulResponses(invoice.getId(), tenantId).size(), 2);
         Assert.assertEquals(initialTaxItems.size(), 8);
     }
 
-    private void testComputeItemsOverTime(final VertexTaxCalculator calculator) throws Exception {
-        testComputeItemsOverTime(calculator, account);
-        testComputeItemsOverTime(calculator, account2);
+    @Test(groups = "integration")
+    public void testComputeWhenAddressHasSpecialCharacters() throws Exception {
+        //given
+        final Account accountWithSpecialChars = TestUtils.buildAccount(Currency.USD, "Alexanderstraße 11", null, "berlin", "BE", "10178", "DE");
+
+        //when&then
+        testComputeItemsOverTime(accountWithSpecialChars);
     }
 
-    private void testComputeItemsOverTime(final VertexTaxCalculator calculator, final Account account) throws Exception {
+    private void testComputeItemsOverTime(final Account... accounts) throws Exception {
+        for (final Account account : accounts) {
+            testComputeItemsOverTime(account);
+        }
+    }
+
+    private void testComputeItemsOverTime(final Account account) throws Exception {
         final Invoice invoice = TestUtils.buildInvoice(account);
         // Avalara requires testing multiple descriptions and multiple tax codes for certification
         final InvoiceItem taxableItem1 = TestUtils.buildInvoiceItem(invoice, InvoiceItemType.EXTERNAL_CHARGE, new BigDecimal("100"), null);
