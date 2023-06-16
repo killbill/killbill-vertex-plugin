@@ -18,7 +18,6 @@
 package org.killbill.billing.plugin.vertex;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -34,9 +33,12 @@ import org.killbill.billing.invoice.api.InvoiceItemType;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseTypeData;
+import org.killbill.billing.plugin.vertex.gen.client.model.Jurisdiction;
+import org.killbill.billing.plugin.vertex.gen.client.model.JurisdictionTypeEnum;
 import org.killbill.billing.plugin.vertex.gen.client.model.OwnerResponseLineItemType;
 import org.killbill.billing.plugin.vertex.gen.client.model.SaleMessageTypeEnum;
 import org.killbill.billing.plugin.vertex.gen.client.model.SaleRequestType;
+import org.killbill.billing.plugin.vertex.gen.client.model.TaxesType;
 import org.killbill.billing.util.callcontext.TenantContext;
 import org.killbill.clock.Clock;
 import org.mockito.InjectMocks;
@@ -78,6 +80,10 @@ public class VertexTaxCalculatorTest {
     private VertexApiConfigurationHandler vertexApiConfigurationHandler;
     @Mock
     private ApiSuccessResponseTransactionResponseType taxResponse;
+    @Mock
+    private OwnerResponseLineItemType responseLineItem;
+    @Mock
+    private ApiSuccessResponseTransactionResponseTypeData apiResponseData;
 
     @InjectMocks
     private VertexTaxCalculator vertexTaxCalculator;
@@ -103,21 +109,14 @@ public class VertexTaxCalculatorTest {
         given(taxableInvoiceItem.getStartDate()).willReturn(INVOICE_DATE);
         given(taxableInvoiceItem.getEndDate()).willReturn(INVOICE_DATE.plusMonths(1));
 
-        final List<InvoiceItem> invoiceItems = Arrays.asList(taxableInvoiceItem);
-        given(invoice.getInvoiceItems()).willReturn(invoiceItems);
+        given(invoice.getInvoiceItems()).willReturn(Collections.singletonList(taxableInvoiceItem));
 
         given(vertexDao.getSuccessfulResponses(any(UUID.class), any(UUID.class))).willReturn(Collections.emptyList());
+        given(vertexApiClient.calculateTaxes(any(SaleRequestType.class))).willReturn(taxResponse);
 
-        final ApiSuccessResponseTransactionResponseTypeData apiResponseData = Mockito.mock(ApiSuccessResponseTransactionResponseTypeData.class);
-
-        OwnerResponseLineItemType responseLineItem = Mockito.mock(OwnerResponseLineItemType.class);
         given(responseLineItem.getLineItemId()).willReturn(INVOICE_ID.toString());
         given(responseLineItem.getTotalTax()).willReturn(MOCK_TAX_AMOUNT_1_01);
-
-        final List<OwnerResponseLineItemType> responseLineItemTypeList = Arrays.asList(responseLineItem);
-        given(apiResponseData.getLineItems()).willReturn(responseLineItemTypeList);
-        given(taxResponse.getData()).willReturn(apiResponseData);
-        given(vertexApiClient.calculateTaxes(any(SaleRequestType.class))).willReturn(taxResponse);
+        given(apiResponseData.getLineItems()).willReturn(Collections.singletonList(responseLineItem));
     }
 
     @BeforeMethod(groups = "fast")
@@ -143,6 +142,7 @@ public class VertexTaxCalculatorTest {
     @Test(groups = "fast")
     public void testCompute() throws Exception {
         //given
+        given(taxResponse.getData()).willReturn(apiResponseData);
         final boolean isDryRun = false;
 
         //when
@@ -166,6 +166,7 @@ public class VertexTaxCalculatorTest {
     @Test(groups = "fast")
     public void testComputeDryRun() throws Exception {
         //given
+        given(taxResponse.getData()).willReturn(apiResponseData);
         final boolean isDryRun = true;
 
         //when
@@ -175,5 +176,41 @@ public class VertexTaxCalculatorTest {
         verify(vertexDao, times(0))
                 .addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
         verify(vertexApiClient).calculateTaxes(argThat(arg -> SaleMessageTypeEnum.QUOTATION.equals(arg.getSaleMessageType())));
+    }
+
+    @Test(groups = "fast")
+    public void testTaxDescriptionLogic() throws Exception {
+        //given
+        final boolean isDryRun = true;
+        given(taxResponse.getData()).willReturn(apiResponseData);
+        given(responseLineItem.getTaxes()).willReturn(null);
+
+        String expectedTaxDescription = "Tax"; //The case when taxes retrieved from total tax field (taxes object is missing in line item)
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
+        assertEquals(expectedTaxDescription, result.get(0).getDescription());
+
+        //when taxes retrieved from calculated tax field
+        TaxesType taxesType = new TaxesType();
+        taxesType.setCalculatedTax(MOCK_TAX_AMOUNT_1_01);
+        given(responseLineItem.getTaxes()).willReturn(Collections.singletonList(taxesType));
+        expectedTaxDescription = "Tax Code";
+
+        //when jurisdiction is absent and both vertex tax code and tax code are present
+        taxesType.setTaxCode(expectedTaxDescription);
+        taxesType.setVertexTaxCode("Vertex Tax Code");
+        result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
+        assertEquals(expectedTaxDescription, result.get(0).getDescription());
+
+        //when jurisdiction is absent and only vertex tax code is present
+        taxesType.setTaxCode(null);
+        taxesType.setVertexTaxCode("Vertex Tax Code");
+        result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
+        assertEquals("Vertex Tax Code", result.get(0).getDescription());
+
+        //when jurisdiction exists
+        taxesType = taxesType.jurisdiction(new Jurisdiction().jurisdictionType(JurisdictionTypeEnum.STATE).value("CA"));
+        given(responseLineItem.getTaxes()).willReturn(Collections.singletonList(taxesType));
+        result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
+        assertEquals("CA STATE TAX", result.get(0).getDescription());
     }
 }
