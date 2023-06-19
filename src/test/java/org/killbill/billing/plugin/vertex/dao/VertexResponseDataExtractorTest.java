@@ -262,7 +262,7 @@ public class VertexResponseDataExtractorTest {
         final OwnerResponseLineItemType lineItem = new OwnerResponseLineItemType().taxes(Collections.singletonList(new TaxesType().exempt(null)));
 
         //when
-        final BigDecimal totalExempt = vertexResponseDataExtractor.getTotalTaxCalculated(Collections.singletonList(lineItem));
+        final BigDecimal totalExempt = vertexResponseDataExtractor.getTotalTaxExempt(Collections.singletonList(lineItem));
 
         //then
         assertEquals(totalExempt, BigDecimal.ZERO);
@@ -304,12 +304,13 @@ public class VertexResponseDataExtractorTest {
     }
 
     @Test(groups = "fast")
-    public void testGetTotalTaxableNPE() {
+    public void testGetTotalTaxableNullAndEmptyTaxes() {
         //given
-        final OwnerResponseLineItemType lineItem = new OwnerResponseLineItemType().taxes(Collections.singletonList(new TaxesType().taxable(null)));
+        final OwnerResponseLineItemType lineItemNullTaxable = new OwnerResponseLineItemType().taxes(Collections.singletonList(new TaxesType().taxable(null)));
+        final OwnerResponseLineItemType lineItemEmptyTaxesList = new OwnerResponseLineItemType().taxes(ImmutableList.of());
 
         //when
-        final BigDecimal totalTaxCalculated = vertexResponseDataExtractor.getTotalTaxCalculated(Collections.singletonList(lineItem));
+        final BigDecimal totalTaxCalculated = vertexResponseDataExtractor.getTotalTaxable(Arrays.asList(lineItemNullTaxable, lineItemEmptyTaxesList));
 
         //then
         assertEquals(totalTaxCalculated, BigDecimal.ZERO);

@@ -220,7 +220,7 @@ public class VertexResponseDataExtractor {
         return lineItems != null
                ? lineItems.stream()
                           .filter(Objects::nonNull)
-                          .filter(lineItem -> lineItem.getTaxes() != null)
+                          .filter(lineItem -> lineItem.getTaxes() != null && lineItem.getTaxes().size() > 0)
                           .map(lineItem -> lineItem.getTaxes().get(0))      //taxable field is the same for all taxes in the lineItem, so get the first one
                           .map(TaxesType::getTaxable)
                           .filter(Objects::nonNull)
