@@ -54,13 +54,15 @@ public class VertexDao extends PluginDao {
     private static final Logger logger = LoggerFactory.getLogger(VertexDao.class);
     private static final String SUCCESS = "SUCCESS";
     private static final String ERROR = "ERROR";
+    private final VertexResponseDataExtractor vertexResponseDataExtractor;
 
     static {
         objectMapper.registerModule(new JavaTimeModule());
     }
 
-    public VertexDao(final DataSource dataSource) throws SQLException {
+    public VertexDao(final DataSource dataSource, final VertexResponseDataExtractor vertexResponseDataExtractor) throws SQLException {
         super(dataSource);
+        this.vertexResponseDataExtractor = vertexResponseDataExtractor;
     }
 
     // Success
@@ -83,21 +85,21 @@ public class VertexDao extends PluginDao {
                                    VERTEX_RESPONSES.KB_ACCOUNT_ID,
                                    VERTEX_RESPONSES.KB_INVOICE_ID,
                                    VERTEX_RESPONSES.KB_INVOICE_ITEM_IDS,
-                                    VERTEX_RESPONSES.DOC_CODE,
+                                   VERTEX_RESPONSES.DOC_CODE,
                                    VERTEX_RESPONSES.DOC_DATE,
                                    VERTEX_RESPONSES.TIMESTAMP,
                                    VERTEX_RESPONSES.TOTAL_AMOUNT,
-                                  /* VERTEX_RESPONSES.TOTAL_DISCOUNT,
+                                   VERTEX_RESPONSES.TOTAL_DISCOUNT,
                                    VERTEX_RESPONSES.TOTAL_EXEMPTION,
-                                   VERTEX_RESPONSES.TOTAL_TAXABLE,*/
+                                   VERTEX_RESPONSES.TOTAL_TAXABLE,
                                    VERTEX_RESPONSES.TOTAL_TAX,
-                               /* VERTEX_RESPONSES.TOTAL_TAX_CALCULATED,*/
+                                   VERTEX_RESPONSES.TOTAL_TAX_CALCULATED,
                                    VERTEX_RESPONSES.TAX_DATE,
                                    VERTEX_RESPONSES.TAX_LINES,
-                                 /*  VERTEX_RESPONSES.TAX_SUMMARY,
-                                   VERTEX_RESPONSES.TAX_ADDRESSES,*/
+                                   VERTEX_RESPONSES.TAX_SUMMARY,
+                                   VERTEX_RESPONSES.TAX_ADDRESSES,
                                    VERTEX_RESPONSES.RESULT_CODE,
-                               /*VERTEX_RESPONSES.MESSAGES,*/
+                                   VERTEX_RESPONSES.MESSAGES,
                                    VERTEX_RESPONSES.ADDITIONAL_DATA,
                                    VERTEX_RESPONSES.CREATED_DATE,
                                    VERTEX_RESPONSES.KB_TENANT_ID)
@@ -108,18 +110,19 @@ public class VertexDao extends PluginDao {
                                resultData.getDocumentDate() == null ? null : resultData.getDocumentDate().atStartOfDay(),
                                null,
                                resultData.getTotal() == null ? null : BigDecimal.valueOf(resultData.getTotal()),
-                              /* BigDecimal.valueOf(resultData.getDiscount().getDiscountValue()),
-                               BigDecimal.valueOf(resultData.totalExempt),
-                               BigDecimal.valueOf(resultData.totalTaxable),*/
+                               (resultData.getDiscount() == null || resultData.getDiscount().getDiscountValue() == null)
+                               ? null : BigDecimal.valueOf(resultData.getDiscount().getDiscountValue()),
+                               vertexResponseDataExtractor.getTotalTaxExempt(resultData.getLineItems()),
+                               vertexResponseDataExtractor.getTotalTaxable(resultData.getLineItems()),
                                resultData.getTotalTax() == null ? null : BigDecimal.valueOf(resultData.getTotalTax()),
-                               /* BigDecimal.valueOf(resultData.totalTaxCalculated),*/
+                               vertexResponseDataExtractor.getTotalTaxCalculated(resultData.getLineItems()),
                                resultData.getTaxPointDate() == null ? null : resultData.getTaxPointDate().atStartOfDay(),
                                asString(resultData.getLineItems()),
-                             /*  asString(resultData.summary),
-                               asString(resultData.addresses),*/
+                               asString(vertexResponseDataExtractor.getTransactionSummary(resultData.getLineItems())),
+                               asString(vertexResponseDataExtractor.getAddresses(resultData.getCustomer())),
                                SUCCESS,
-                               /*asString(resultData.messages),*/
                                null,
+                               asString(vertexResponseDataExtractor.getAdditionalData(resultData)),
                                toLocalDateTime(utcNow),
                                kbTenantId.toString())
                        .execute();

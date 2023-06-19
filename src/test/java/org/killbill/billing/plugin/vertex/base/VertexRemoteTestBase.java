@@ -24,6 +24,7 @@ import org.killbill.billing.plugin.TestUtils;
 import org.killbill.billing.plugin.vertex.EmbeddedDbHelper;
 import org.killbill.billing.plugin.vertex.VertexApiClient;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
+import org.killbill.billing.plugin.vertex.dao.VertexResponseDataExtractor;
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.testng.annotations.AfterSuite;
@@ -54,7 +55,7 @@ public abstract class VertexRemoteTestBase {
     @BeforeMethod(groups = {"slow", "integration"})
     public void setUpBeforeMethod() throws Exception {
         EmbeddedDbHelper.instance().resetDB();
-        dao = new VertexDao(EmbeddedDbHelper.instance().getDataSource());
+        dao = new VertexDao(EmbeddedDbHelper.instance().getDataSource(), new VertexResponseDataExtractor());
     }
 
     @BeforeMethod(groups = "integration")
