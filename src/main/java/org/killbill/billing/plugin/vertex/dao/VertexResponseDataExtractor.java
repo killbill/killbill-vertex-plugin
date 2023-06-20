@@ -36,6 +36,7 @@ import org.killbill.billing.plugin.vertex.gen.client.model.PhysicalLocation;
 import org.killbill.billing.plugin.vertex.gen.client.model.TaxRegistrationType;
 import org.killbill.billing.plugin.vertex.gen.client.model.TaxesType;
 
+import com.google.common.base.MoreObjects;
 import com.google.common.collect.ImmutableList;
 
 public class VertexResponseDataExtractor {
@@ -226,7 +227,11 @@ public class VertexResponseDataExtractor {
     }
 
     LocalDateTime getTaxDate() {
-        return vertexResponseData.getTaxPointDate() != null ? vertexResponseData.getTaxPointDate().atStartOfDay() : null;
+        final LocalDateTime nullableTaxDate = vertexResponseData.getTaxPointDate() != null
+                                      ? vertexResponseData.getTaxPointDate().atStartOfDay()
+                                      : null;
+
+        return MoreObjects.firstNonNull(nullableTaxDate, getDocumentDate());
     }
 
     List<OwnerResponseLineItemType> getTaxLines() {

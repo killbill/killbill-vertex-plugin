@@ -463,12 +463,14 @@ public class VertexResponseDataExtractorTest {
     @Test(groups = "fast")
     public void testGetTaxDateNull() {
         //given
-        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().taxPointDate(null);
+        final LocalDate documentDate = LocalDate.now();
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData()
+                .taxPointDate(null).documentDate(documentDate);
 
         //when
         final LocalDateTime actualTaxDate = new VertexResponseDataExtractor(vertexResponse).getTaxDate();
 
         //then
-        assertNull(actualTaxDate);
+        assertEquals(actualTaxDate, documentDate.atStartOfDay());
     }
 }
