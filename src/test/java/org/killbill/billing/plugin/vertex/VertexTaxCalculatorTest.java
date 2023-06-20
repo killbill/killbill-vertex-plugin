@@ -179,9 +179,9 @@ public class VertexTaxCalculatorTest {
     }
 
     @Test(groups = "fast")
-    public void testTaxDescriptionLogic() throws Exception {
+    public void testTaxDescription() throws Exception {
         //given
-        final boolean isDryRun = true;
+        final boolean isDryRun = false;
         given(taxResponse.getData()).willReturn(apiResponseData);
         given(responseLineItem.getTaxes()).willReturn(null);
 
