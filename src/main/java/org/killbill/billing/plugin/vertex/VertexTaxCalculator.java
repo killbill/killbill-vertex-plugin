@@ -46,6 +46,7 @@ import org.killbill.billing.plugin.vertex.gen.client.model.CustomerCodeType;
 import org.killbill.billing.plugin.vertex.gen.client.model.CustomerType;
 import org.killbill.billing.plugin.vertex.gen.client.model.FlexibleCodeField;
 import org.killbill.billing.plugin.vertex.gen.client.model.FlexibleFields;
+import org.killbill.billing.plugin.vertex.gen.client.model.Jurisdiction;
 import org.killbill.billing.plugin.vertex.gen.client.model.LocationType;
 import org.killbill.billing.plugin.vertex.gen.client.model.OwnerResponseLineItemType;
 import org.killbill.billing.plugin.vertex.gen.client.model.Product;
@@ -274,7 +275,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         } else {
             final Collection<InvoiceItem> invoiceItems = new LinkedList<>();
             for (final TaxesType transactionLineDetailModel : transactionLineModel.getTaxes()) {
-                final String description = MoreObjects.firstNonNull(transactionLineDetailModel.getTaxCode(), MoreObjects.firstNonNull(transactionLineDetailModel.getVertexTaxCode(), "Tax"));
+                final String description = getTaxDescription(transactionLineDetailModel);
                 final BigDecimal calculatedTax = transactionLineDetailModel.getCalculatedTax() != null ? BigDecimal.valueOf(transactionLineDetailModel.getCalculatedTax()) : null;
                 final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, calculatedTax, description);
                 if (taxItem != null) {
@@ -283,6 +284,13 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             }
             return invoiceItems;
         }
+    }
+
+    private String getTaxDescription(final TaxesType transactionLineDetailModel) {
+        final Jurisdiction jurisdiction = transactionLineDetailModel.getJurisdiction();
+        return jurisdiction != null
+               ? String.format("%s %s TAX", jurisdiction.getValue(), jurisdiction.getJurisdictionType())
+               : MoreObjects.firstNonNull(transactionLineDetailModel.getTaxCode(), MoreObjects.firstNonNull(transactionLineDetailModel.getVertexTaxCode(), "Tax"));
     }
 
     private SaleRequestType toTaxRequest(final Account account,
