@@ -18,7 +18,6 @@
 package org.killbill.billing.plugin.vertex.dao;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,7 +36,6 @@ import org.jooq.impl.DSL;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.plugin.dao.PluginDao;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
-import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseTypeData;
 import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,15 +52,13 @@ public class VertexDao extends PluginDao {
     private static final Logger logger = LoggerFactory.getLogger(VertexDao.class);
     private static final String SUCCESS = "SUCCESS";
     private static final String ERROR = "ERROR";
-    private final VertexResponseDataExtractor vertexResponseDataExtractor;
 
     static {
         objectMapper.registerModule(new JavaTimeModule());
     }
 
-    public VertexDao(final DataSource dataSource, final VertexResponseDataExtractor vertexResponseDataExtractor) throws SQLException {
+    public VertexDao(final DataSource dataSource) throws SQLException {
         super(dataSource);
-        this.vertexResponseDataExtractor = vertexResponseDataExtractor;
     }
 
     // Success
@@ -72,11 +68,12 @@ public class VertexDao extends PluginDao {
                             final ApiSuccessResponseTransactionResponseType taxResult,
                             final DateTime utcNow,
                             final UUID kbTenantId) throws SQLException {
-        ApiSuccessResponseTransactionResponseTypeData resultData = taxResult.getData();
 
-        if (Objects.isNull(resultData)) {
+        if (Objects.isNull(taxResult.getData())) {
             return;
         }
+
+        final VertexResponseDataExtractor vertexResponseDataExtractor = new VertexResponseDataExtractor(taxResult.getData());
 
         execute(dataSource.getConnection(),
                 (WithConnectionCallback<Void>) conn -> {
@@ -106,23 +103,22 @@ public class VertexDao extends PluginDao {
                        .values(kbAccountId.toString(),
                                kbInvoiceId.toString(),
                                kbInvoiceItemsIdsAsString(kbInvoiceItems),
-                               resultData.getTransactionId(),
-                               resultData.getDocumentDate() == null ? null : resultData.getDocumentDate().atStartOfDay(),
+                               vertexResponseDataExtractor.getDocumentCode(),
+                               vertexResponseDataExtractor.getDocumentDate(),
                                null,
-                               resultData.getTotal() == null ? null : BigDecimal.valueOf(resultData.getTotal()),
-                               (resultData.getDiscount() == null || resultData.getDiscount().getDiscountValue() == null)
-                               ? null : BigDecimal.valueOf(resultData.getDiscount().getDiscountValue()),
-                               vertexResponseDataExtractor.getTotalTaxExempt(resultData.getLineItems()),
-                               vertexResponseDataExtractor.getTotalTaxable(resultData.getLineItems()),
-                               resultData.getTotalTax() == null ? null : BigDecimal.valueOf(resultData.getTotalTax()),
-                               vertexResponseDataExtractor.getTotalTaxCalculated(resultData.getLineItems()),
-                               resultData.getTaxPointDate() == null ? null : resultData.getTaxPointDate().atStartOfDay(),
-                               asString(resultData.getLineItems()),
-                               asString(vertexResponseDataExtractor.getTransactionSummary(resultData.getLineItems())),
-                               asString(vertexResponseDataExtractor.getAddresses(resultData.getCustomer())),
+                               vertexResponseDataExtractor.getTotalAmount(),
+                               vertexResponseDataExtractor.getTotalDiscount(),
+                               vertexResponseDataExtractor.getTotalTaxExempt(),
+                               vertexResponseDataExtractor.getTotalTaxable(),
+                               vertexResponseDataExtractor.getTotalTax(),
+                               vertexResponseDataExtractor.getTotalTaxCalculated(),
+                               vertexResponseDataExtractor.getTaxDate(),
+                               asString(vertexResponseDataExtractor.getTaxLines()),
+                               asString(vertexResponseDataExtractor.getTransactionSummary()),
+                               asString(vertexResponseDataExtractor.getAddresses()),
                                SUCCESS,
                                null,
-                               asString(vertexResponseDataExtractor.getAdditionalData(resultData)),
+                               asString(vertexResponseDataExtractor.getAdditionalData()),
                                toLocalDateTime(utcNow),
                                kbTenantId.toString())
                        .execute();

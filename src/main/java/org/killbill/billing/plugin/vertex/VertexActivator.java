@@ -30,7 +30,6 @@ import org.killbill.billing.plugin.api.notification.PluginConfigurationEventHand
 import org.killbill.billing.plugin.core.resources.jooby.PluginApp;
 import org.killbill.billing.plugin.core.resources.jooby.PluginAppBuilder;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
-import org.killbill.billing.plugin.vertex.dao.VertexResponseDataExtractor;
 import org.killbill.billing.plugin.vertex.health.VertexHealthcheck;
 import org.killbill.billing.plugin.vertex.health.VertexHealthcheckServlet;
 import org.osgi.framework.BundleContext;
@@ -45,7 +44,7 @@ public class VertexActivator extends KillbillActivatorBase {
     public void start(final BundleContext context) throws Exception {
         super.start(context);
 
-        final VertexDao dao = new VertexDao(dataSource.getDataSource(), new VertexResponseDataExtractor());
+        final VertexDao dao = new VertexDao(dataSource.getDataSource());
 
         vertexApiConfigurationHandler = new VertexApiConfigurationHandler(PLUGIN_NAME, killbillAPI);
 

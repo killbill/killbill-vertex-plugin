@@ -18,6 +18,7 @@
 package org.killbill.billing.plugin.vertex.dao;
 
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -99,23 +100,33 @@ public class VertexResponseDataExtractor {
         private final String taxAreaId;
 
         AddressInfo(final LocationType locationType) {
-            this.city = locationType.getCity();
-            this.mainDivision = locationType.getMainDivision();
-            this.streetAddress1 = locationType.getStreetAddress1();
-            this.streetAddress2 = locationType.getStreetAddress2();
-            this.country = locationType.getCountry();
-            this.postalCode = locationType.getPostalCode();
-            this.taxAreaId = locationType.getTaxAreaId();
+            this(locationType.getCity(),
+                 locationType.getMainDivision(),
+                 locationType.getStreetAddress1(),
+                 locationType.getStreetAddress2(),
+                 locationType.getCountry(),
+                 locationType.getPostalCode(),
+                 locationType.getTaxAreaId());
         }
 
         AddressInfo(final PhysicalLocation physicalLocation) {
-            this.city = physicalLocation.getCity();
-            this.mainDivision = physicalLocation.getMainDivision();
-            this.streetAddress1 = physicalLocation.getStreetAddress1();
-            this.streetAddress2 = physicalLocation.getStreetAddress2();
-            this.country = physicalLocation.getCountry();
-            this.postalCode = physicalLocation.getPostalCode();
-            this.taxAreaId = physicalLocation.getTaxAreaId();
+            this(physicalLocation.getCity(),
+                 physicalLocation.getMainDivision(),
+                 physicalLocation.getStreetAddress1(),
+                 physicalLocation.getStreetAddress2(),
+                 physicalLocation.getCountry(),
+                 physicalLocation.getPostalCode(),
+                 physicalLocation.getTaxAreaId());
+        }
+
+        private AddressInfo(final String city, final String mainDivision, final String streetAddress1, final String streetAddress2, final String country, final String postalCode, final String taxAreaId) {
+            this.city = city;
+            this.mainDivision = mainDivision;
+            this.streetAddress1 = streetAddress1;
+            this.streetAddress2 = streetAddress2;
+            this.country = country;
+            this.postalCode = postalCode;
+            this.taxAreaId = taxAreaId;
         }
 
         public String getCity() {
@@ -147,9 +158,86 @@ public class VertexResponseDataExtractor {
         }
     }
 
-    List<TaxInfo> getTransactionSummary(final List<OwnerResponseLineItemType> lineItems) {
+    private final ApiSuccessResponseTransactionResponseTypeData vertexResponseData;
+
+    private final List<TaxInfo> transactionSummary;
+    private final Map<String, Object> additionalData;
+    private final List<AddressInfo> addresses;
+    private final BigDecimal totalTaxCalculated;
+    private final BigDecimal totalTaxExempt;
+    private final BigDecimal totalTaxable;
+
+    public VertexResponseDataExtractor(final ApiSuccessResponseTransactionResponseTypeData vertexResponseData) {
+        this.vertexResponseData = vertexResponseData;
+
+        this.transactionSummary = buildTransactionSummary();
+        this.additionalData = buildAdditionalData();
+        this.addresses = buildAddresses();
+
+        this.totalTaxCalculated = computeTotalTaxCalculated();
+        this.totalTaxExempt = computeTotalTaxExempt();
+        this.totalTaxable = computeTotalTaxable();
+    }
+
+    Map<String, Object> getAdditionalData() {
+        return additionalData;
+    }
+
+    List<TaxInfo> getTransactionSummary() {
+        return transactionSummary;
+    }
+
+    List<AddressInfo> getAddresses() {
+        return addresses;
+    }
+
+    BigDecimal getTotalTaxCalculated() {
+        return totalTaxCalculated;
+    }
+
+    BigDecimal getTotalTaxExempt() {
+        return totalTaxExempt;
+    }
+
+    BigDecimal getTotalTaxable() {
+        return totalTaxable;
+    }
+
+    String getDocumentCode() {
+        return vertexResponseData.getTransactionId();
+    }
+
+    LocalDateTime getDocumentDate() {
+        return vertexResponseData.getDocumentDate() != null ? vertexResponseData.getDocumentDate().atStartOfDay() : null;
+    }
+
+    BigDecimal getTotalAmount() {
+        return vertexResponseData.getTotal() != null ? BigDecimal.valueOf(vertexResponseData.getTotal()) : null;
+    }
+
+    BigDecimal getTotalDiscount() {
+        return vertexResponseData.getDiscount() != null && vertexResponseData.getDiscount().getDiscountValue() != null
+               ? BigDecimal.valueOf(vertexResponseData.getDiscount().getDiscountValue())
+               : null;
+    }
+
+    BigDecimal getTotalTax() {
+        return vertexResponseData.getTotalTax() != null ? BigDecimal.valueOf(vertexResponseData.getTotalTax()) : null;
+    }
+
+    LocalDateTime getTaxDate() {
+        return vertexResponseData.getTaxPointDate() != null ? vertexResponseData.getTaxPointDate().atStartOfDay() : null;
+    }
+
+    List<OwnerResponseLineItemType> getTaxLines() {
+        return vertexResponseData.getLineItems();
+    }
+
+    private List<TaxInfo> buildTransactionSummary() {
+        final List<OwnerResponseLineItemType> lineItems = vertexResponseData.getLineItems();
         return lineItems != null
                ? lineItems.stream()
+                          .filter(Objects::nonNull)
                           .map(OwnerResponseLineItemType::getTaxes)
                           .filter(Objects::nonNull)
                           .flatMap(Collection::stream)
@@ -158,15 +246,16 @@ public class VertexResponseDataExtractor {
                : ImmutableList.of();
     }
 
-    Map<String, Object> getAdditionalData(final ApiSuccessResponseTransactionResponseTypeData response) {
+    private Map<String, Object> buildAdditionalData() {
         final Map<String, Object> additionalData = new HashMap<>();
 
-        additionalData.put("roundAtLineLevel", response.getRoundAtLineLevel()); //todo: add additional useful information if needed
+        additionalData.put("roundAtLineLevel", vertexResponseData.getRoundAtLineLevel()); //todo: add additional useful information if needed
 
         return additionalData;
     }
 
-    List<AddressInfo> getAddresses(CustomerType customer) {
+    private List<AddressInfo> buildAddresses() {
+        final CustomerType customer = vertexResponseData.getCustomer();
         if (customer == null) {
             return ImmutableList.of();
         }
@@ -190,7 +279,8 @@ public class VertexResponseDataExtractor {
         return addresses;
     }
 
-    BigDecimal getTotalTaxCalculated(final List<OwnerResponseLineItemType> lineItems) {
+    private BigDecimal computeTotalTaxCalculated() {
+        final List<OwnerResponseLineItemType> lineItems = vertexResponseData.getLineItems();
         return lineItems != null
                ? lineItems.stream()
                           .filter(Objects::nonNull)
@@ -203,7 +293,8 @@ public class VertexResponseDataExtractor {
                : BigDecimal.ZERO;
     }
 
-    BigDecimal getTotalTaxExempt(final List<OwnerResponseLineItemType> lineItems) {
+    private BigDecimal computeTotalTaxExempt() {
+        final List<OwnerResponseLineItemType> lineItems = vertexResponseData.getLineItems();
         return lineItems != null
                ? lineItems.stream()
                           .filter(Objects::nonNull)
@@ -216,7 +307,8 @@ public class VertexResponseDataExtractor {
                : BigDecimal.ZERO;
     }
 
-    BigDecimal getTotalTaxable(final List<OwnerResponseLineItemType> lineItems) {
+    private BigDecimal computeTotalTaxable() {
+        final List<OwnerResponseLineItemType> lineItems = vertexResponseData.getLineItems();
         return lineItems != null
                ? lineItems.stream()
                           .filter(Objects::nonNull)

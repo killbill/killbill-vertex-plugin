@@ -18,6 +18,8 @@
 package org.killbill.billing.plugin.vertex.dao;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -27,6 +29,7 @@ import org.killbill.billing.plugin.vertex.dao.VertexResponseDataExtractor.Addres
 import org.killbill.billing.plugin.vertex.dao.VertexResponseDataExtractor.TaxInfo;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseTypeData;
 import org.killbill.billing.plugin.vertex.gen.client.model.CustomerType;
+import org.killbill.billing.plugin.vertex.gen.client.model.Discount;
 import org.killbill.billing.plugin.vertex.gen.client.model.Jurisdiction;
 import org.killbill.billing.plugin.vertex.gen.client.model.JurisdictionTypeEnum;
 import org.killbill.billing.plugin.vertex.gen.client.model.LocationType;
@@ -42,8 +45,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNull;
 
 public class VertexResponseDataExtractorTest {
-
-    private final VertexResponseDataExtractor vertexResponseDataExtractor = new VertexResponseDataExtractor();
 
     @Test(groups = "fast")
     public void testGetTransactionSummary() {
@@ -86,10 +87,11 @@ public class VertexResponseDataExtractorTest {
         line1.setTaxes(Collections.singletonList(tax1));
         final OwnerResponseLineItemType line2 = new OwnerResponseLineItemType();
         line2.setTaxes(Collections.singletonList(tax2));
-        final List<OwnerResponseLineItemType> lineItems = Arrays.asList(line1, line2);
+
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().lineItems(Arrays.asList(line1, line2));
 
         //when
-        final List<TaxInfo> taxInfos = vertexResponseDataExtractor.getTransactionSummary(lineItems);
+        final List<TaxInfo> taxInfos = new VertexResponseDataExtractor(vertexResponse).getTransactionSummary();
 
         //then
         assertEquals(taxInfos.size(), 2);
@@ -113,19 +115,18 @@ public class VertexResponseDataExtractorTest {
 
     @Test(groups = "fast")
     public void testGetTransactionSummaryEmpty() {
-        assertEquals(vertexResponseDataExtractor.getTransactionSummary(null).size(), 0);
-        assertEquals(vertexResponseDataExtractor.getTransactionSummary(ImmutableList.of()).size(), 0);
-        assertEquals(vertexResponseDataExtractor.getTransactionSummary(
-                Collections.singletonList(new OwnerResponseLineItemType().taxes(null))).size(), 0);
+        assertEquals(new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData().lineItems(null)).getTransactionSummary().size(), 0);
+        assertEquals(new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData().lineItems(ImmutableList.of())).getTransactionSummary().size(), 0);
+        assertEquals(new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData().lineItems(
+                Collections.singletonList(new OwnerResponseLineItemType().taxes(null)))).getTransactionSummary().size(), 0);
     }
 
     @Test(groups = "fast")
     public void testGetAdditionalData() {
-        assertEquals(vertexResponseDataExtractor.getAdditionalData(
-                             new ApiSuccessResponseTransactionResponseTypeData().roundAtLineLevel(true)).get("roundAtLineLevel"),
-                     true);
-        assertNull(vertexResponseDataExtractor.getAdditionalData(
-                             new ApiSuccessResponseTransactionResponseTypeData().roundAtLineLevel(null)).get("roundAtLineLevel"));
+        assertEquals(new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData().roundAtLineLevel(true))
+                             .getAdditionalData().get("roundAtLineLevel"), true);
+        assertNull(new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData().roundAtLineLevel(null))
+                           .getAdditionalData().get("roundAtLineLevel"));
     }
 
     @Test(groups = "fast")
@@ -155,8 +156,10 @@ public class VertexResponseDataExtractorTest {
                         new TaxRegistrationType().physicalLocations(
                                 Collections.singletonList(taxRegistrationAddress))));
 
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().customer(customer);
+
         //when
-        final List<AddressInfo> addresses = vertexResponseDataExtractor.getAddresses(customer);
+        final List<AddressInfo> addresses = new VertexResponseDataExtractor(vertexResponse).getAddresses();
 
         //then
         assertEquals(addresses.get(0).getCity(), destinationAddress.getCity());
@@ -178,11 +181,15 @@ public class VertexResponseDataExtractorTest {
 
     @Test(groups = "fast")
     public void testGetAddressesEmpty() {
-        assertEquals(vertexResponseDataExtractor.getAddresses(null).size(), 0);
-
-        assertEquals(vertexResponseDataExtractor.getAddresses(new CustomerType().destination(null)).size(), 0);
-        assertEquals(vertexResponseDataExtractor.getAddresses(new CustomerType().taxRegistrations(
-                Collections.singletonList(new TaxRegistrationType().physicalLocations(null)))).size(), 0);
+        assertEquals(new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData()
+                                                             .customer(null))
+                             .getAddresses().size(), 0);
+        assertEquals(new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData()
+                                                             .customer(new CustomerType().destination(null)))
+                             .getAddresses().size(), 0);
+        assertEquals(new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData().customer(
+                new CustomerType().taxRegistrations(Collections.singletonList(
+                        new TaxRegistrationType().physicalLocations(null))))).getAddresses().size(), 0);
 
     }
 
@@ -208,8 +215,10 @@ public class VertexResponseDataExtractorTest {
                                                                 .add(BigDecimal.valueOf(calculatedTax2_1))
                                                                 .add(BigDecimal.valueOf(calculatedTax2_2));
 
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().lineItems(Arrays.asList(lineItem1, lineItem2));
+
         //when
-        final BigDecimal totalTaxCalculated = vertexResponseDataExtractor.getTotalTaxCalculated(Arrays.asList(lineItem1, lineItem2));
+        final BigDecimal totalTaxCalculated = new VertexResponseDataExtractor(vertexResponse).getTotalTaxCalculated();
 
         //then
         assertEquals(totalTaxCalculated, expectedTotalTaxCalculated);
@@ -219,9 +228,10 @@ public class VertexResponseDataExtractorTest {
     public void testGetTotalTaxCalculatedNPE() {
         //given
         final OwnerResponseLineItemType lineItem = new OwnerResponseLineItemType().taxes(Collections.singletonList(new TaxesType().calculatedTax(null)));
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().lineItems(Collections.singletonList(lineItem));
 
         //when
-        final BigDecimal totalTaxCalculated = vertexResponseDataExtractor.getTotalTaxCalculated(Collections.singletonList(lineItem));
+        final BigDecimal totalTaxCalculated = new VertexResponseDataExtractor(vertexResponse).getTotalTaxCalculated();
 
         //then
         assertEquals(totalTaxCalculated, BigDecimal.ZERO);
@@ -249,8 +259,10 @@ public class VertexResponseDataExtractorTest {
                                                                 .add(BigDecimal.valueOf(exempt2_1))
                                                                 .add(BigDecimal.valueOf(exempt2_2));
 
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().lineItems(Arrays.asList(lineItem1, lineItem2));
+
         //when
-        final BigDecimal totalTaxExempt = vertexResponseDataExtractor.getTotalTaxExempt(Arrays.asList(lineItem1, lineItem2));
+        final BigDecimal totalTaxExempt = new VertexResponseDataExtractor(vertexResponse).getTotalTaxExempt();
 
         //then
         assertEquals(totalTaxExempt, expectedTotalTaxCalculated);
@@ -260,9 +272,10 @@ public class VertexResponseDataExtractorTest {
     public void testGetTotalExemptNPE() {
         //given
         final OwnerResponseLineItemType lineItem = new OwnerResponseLineItemType().taxes(Collections.singletonList(new TaxesType().exempt(null)));
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().lineItems(Collections.singletonList(lineItem));
 
         //when
-        final BigDecimal totalExempt = vertexResponseDataExtractor.getTotalTaxExempt(Collections.singletonList(lineItem));
+        final BigDecimal totalExempt = new VertexResponseDataExtractor(vertexResponse).getTotalTaxExempt();
 
         //then
         assertEquals(totalExempt, BigDecimal.ZERO);
@@ -296,8 +309,10 @@ public class VertexResponseDataExtractorTest {
         final BigDecimal expectedTotalTaxable = BigDecimal.valueOf(taxable1_1)
                                                           .add(BigDecimal.valueOf(taxable2_1)); //only first for each lineItem
 
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().lineItems(Arrays.asList(lineItem1, lineItem2));
+
         //when
-        final BigDecimal totalTaxable = vertexResponseDataExtractor.getTotalTaxable(Arrays.asList(lineItem1, lineItem2));
+        final BigDecimal totalTaxable = new VertexResponseDataExtractor(vertexResponse).getTotalTaxable();
 
         //then
         assertEquals(totalTaxable, expectedTotalTaxable);
@@ -308,9 +323,10 @@ public class VertexResponseDataExtractorTest {
         //given
         final OwnerResponseLineItemType lineItemNullTaxable = new OwnerResponseLineItemType().taxes(Collections.singletonList(new TaxesType().taxable(null)));
         final OwnerResponseLineItemType lineItemEmptyTaxesList = new OwnerResponseLineItemType().taxes(ImmutableList.of());
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().lineItems(Arrays.asList(lineItemNullTaxable, lineItemEmptyTaxesList));
 
         //when
-        final BigDecimal totalTaxCalculated = vertexResponseDataExtractor.getTotalTaxable(Arrays.asList(lineItemNullTaxable, lineItemEmptyTaxesList));
+        final BigDecimal totalTaxCalculated = new VertexResponseDataExtractor(vertexResponse).getTotalTaxable();
 
         //then
         assertEquals(totalTaxCalculated, BigDecimal.ZERO);
@@ -318,12 +334,141 @@ public class VertexResponseDataExtractorTest {
 
     @Test(groups = "fast")
     public void testZeroResultsWhenLineItemIsNull() {
-        assertEquals(vertexResponseDataExtractor.getTotalTaxCalculated(null), BigDecimal.ZERO);
-        assertEquals(vertexResponseDataExtractor.getTotalTaxExempt(null), BigDecimal.ZERO);
-        assertEquals(vertexResponseDataExtractor.getTotalTaxable(null), BigDecimal.ZERO);
+        //given
+        VertexResponseDataExtractor vertexResponseDataExtractor = new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData().lineItems(null));
+        assertEquals(vertexResponseDataExtractor.getTotalTaxCalculated(), BigDecimal.ZERO);
+        assertEquals(vertexResponseDataExtractor.getTotalTaxExempt(), BigDecimal.ZERO);
+        assertEquals(vertexResponseDataExtractor.getTotalTaxable(), BigDecimal.ZERO);
 
-        assertEquals(vertexResponseDataExtractor.getTotalTaxCalculated(Collections.singletonList(null)), BigDecimal.ZERO);
-        assertEquals(vertexResponseDataExtractor.getTotalTaxExempt(Collections.singletonList(null)), BigDecimal.ZERO);
-        assertEquals(vertexResponseDataExtractor.getTotalTaxable(Collections.singletonList(null)), BigDecimal.ZERO);
+        vertexResponseDataExtractor = new VertexResponseDataExtractor(new ApiSuccessResponseTransactionResponseTypeData().lineItems(Collections.singletonList(null)));
+        assertEquals(vertexResponseDataExtractor.getTotalTaxCalculated(), BigDecimal.ZERO);
+        assertEquals(vertexResponseDataExtractor.getTotalTaxExempt(), BigDecimal.ZERO);
+        assertEquals(vertexResponseDataExtractor.getTotalTaxable(), BigDecimal.ZERO);
+    }
+
+    @Test(groups = "fast")
+    public void testGetDocumentCode() {
+        //given
+        final String transactionId = "transactionId";
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().transactionId(transactionId);
+
+        //when
+        final String actualDocumentCode = new VertexResponseDataExtractor(vertexResponse).getDocumentCode();
+
+        //then
+        assertEquals(actualDocumentCode, transactionId);
+    }
+
+    @Test(groups = "fast")
+    public void testGetDocumentDate() {
+        //given
+        final LocalDate documentDate = LocalDate.now();
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().documentDate(documentDate);
+
+        //when
+        final LocalDateTime actualDocumentDate = new VertexResponseDataExtractor(vertexResponse).getDocumentDate();
+
+        //then
+        assertEquals(actualDocumentDate, documentDate.atStartOfDay());
+    }
+
+    @Test(groups = "fast")
+    public void testGetDocumentNull() {
+        //given
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().documentDate(null);
+
+        //when
+        final LocalDateTime actualDocumentDate = new VertexResponseDataExtractor(vertexResponse).getDocumentDate();
+
+        //then
+        assertNull(actualDocumentDate);
+    }
+
+    @Test(groups = "fast")
+    public void testGetTotalAmount() {
+        //given
+        final double totalAmount = 1.1d;
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().total(totalAmount);
+
+        //when
+        final BigDecimal actualTotalAmount = new VertexResponseDataExtractor(vertexResponse).getTotalAmount();
+
+        //then
+        assertEquals(actualTotalAmount, BigDecimal.valueOf(totalAmount));
+    }
+
+    @Test(groups = "fast")
+    public void testGetTotalAmountNull() {
+        //given
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().total(null);
+
+        //when
+        final BigDecimal actualTotalAmount = new VertexResponseDataExtractor(vertexResponse).getTotalAmount();
+
+        //then
+        assertNull(actualTotalAmount);
+    }
+
+    @Test(groups = "fast")
+    public void testGetTotalDiscount() {
+        //given
+        final double totalDiscount = 1.1d;
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().discount(new Discount().discountValue(totalDiscount));
+
+        //when
+        final BigDecimal actualTotalDiscount = new VertexResponseDataExtractor(vertexResponse).getTotalDiscount();
+
+        //then
+        assertEquals(actualTotalDiscount, BigDecimal.valueOf(totalDiscount));
+    }
+
+    @Test(groups = "fast")
+    public void testGetTotalDiscountNull() {
+        //given
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().discount(new Discount().discountValue(null));
+
+        //when
+        final BigDecimal actualTotalDiscount = new VertexResponseDataExtractor(vertexResponse).getTotalDiscount();
+
+        //then
+        assertNull(actualTotalDiscount);
+    }
+
+    @Test(groups = "fast")
+    public void testGetTaxLines() {
+        //given
+        List<OwnerResponseLineItemType> taxLines = Collections.singletonList(new OwnerResponseLineItemType().lineItemId("id"));
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().lineItems(taxLines);
+
+        //when
+        final List<OwnerResponseLineItemType> actualTaxLines = new VertexResponseDataExtractor(vertexResponse).getTaxLines();
+
+        //then
+        assertEquals(actualTaxLines.get(0), taxLines.get(0));
+    }
+
+    @Test(groups = "fast")
+    public void testGetTaxDate() {
+        //given
+        final LocalDate taxDate = LocalDate.now();
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().taxPointDate(taxDate);
+
+        //when
+        final LocalDateTime actualTaxDate = new VertexResponseDataExtractor(vertexResponse).getTaxDate();
+
+        //then
+        assertEquals(actualTaxDate, taxDate.atStartOfDay());
+    }
+
+    @Test(groups = "fast")
+    public void testGetTaxDateNull() {
+        //given
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().taxPointDate(null);
+
+        //when
+        final LocalDateTime actualTaxDate = new VertexResponseDataExtractor(vertexResponse).getTaxDate();
+
+        //then
+        assertNull(actualTaxDate);
     }
 }
