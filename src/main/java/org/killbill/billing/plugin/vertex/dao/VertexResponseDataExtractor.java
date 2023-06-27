@@ -20,10 +20,8 @@ package org.killbill.billing.plugin.vertex.dao;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -162,51 +160,32 @@ public class VertexResponseDataExtractor {
 
     private final ApiSuccessResponseTransactionResponseTypeData vertexResponseData;
 
-    private final List<TaxInfo> transactionSummary;
-    private final Map<String, Object> additionalData;
-    private final List<AddressInfo> addresses;
-    private final BigDecimal totalTaxCalculated;
-    private final BigDecimal totalTaxExempt;
-    private final BigDecimal totalTaxable;
-
     public VertexResponseDataExtractor(final ApiSuccessResponseTransactionResponseTypeData vertexResponseData) {
         this.vertexResponseData = vertexResponseData;
-
-        this.transactionSummary = buildTransactionSummary();
-        this.additionalData = buildAdditionalData();
-        this.addresses = buildAddresses();
-
-        this.totalTaxCalculated = computeTotalTaxCalculated();
-        this.totalTaxExempt = computeTotalTaxExempt();
-        this.totalTaxable = computeTotalTaxable();
     }
 
-    Map<String, Object> getAdditionalData() {
-        return additionalData;
-    }
-
-    List<TaxInfo> getTransactionSummary() {
-        return transactionSummary;
+    List<TaxInfo> getTaxSummary() {
+        return buildTaxSummary();
     }
 
     List<AddressInfo> getAddresses() {
-        return addresses;
+        return buildAddresses();
     }
 
     BigDecimal getTotalTaxCalculated() {
-        return totalTaxCalculated;
+        return computeTotalTaxCalculated();
     }
 
     BigDecimal getTotalTaxExempt() {
-        return totalTaxExempt;
+        return computeTotalTaxExempt();
     }
 
     BigDecimal getTotalTaxable() {
-        return totalTaxable;
+        return computeTotalTaxable();
     }
 
     String getDocumentCode() {
-        return vertexResponseData.getTransactionId();
+        return vertexResponseData.getDocumentNumber();
     }
 
     LocalDateTime getDocumentDate() {
@@ -239,7 +218,7 @@ public class VertexResponseDataExtractor {
         return vertexResponseData.getLineItems();
     }
 
-    private List<TaxInfo> buildTransactionSummary() {
+    private List<TaxInfo> buildTaxSummary() {
         final List<OwnerResponseLineItemType> lineItems = vertexResponseData.getLineItems();
         return lineItems != null
                ? lineItems.stream()
@@ -250,14 +229,6 @@ public class VertexResponseDataExtractor {
                           .map(TaxInfo::new)
                           .collect(Collectors.toList())
                : ImmutableList.of();
-    }
-
-    private Map<String, Object> buildAdditionalData() {
-        final Map<String, Object> additionalData = new HashMap<>();
-
-        additionalData.put("roundAtLineLevel", vertexResponseData.getRoundAtLineLevel()); //todo: add additional useful information if needed
-
-        return additionalData;
     }
 
     private List<AddressInfo> buildAddresses() {
@@ -305,8 +276,12 @@ public class VertexResponseDataExtractor {
                ? lineItems.stream()
                           .filter(Objects::nonNull)
                           .filter(lineItem -> lineItem.getTaxes() != null)
-                          .flatMap(lineItem -> lineItem.getTaxes().stream())
-                          .map(TaxesType::getExempt)
+                          .flatMap(lineItem -> lineItem.getTaxes()
+                                                       .stream()
+                                                       .filter(taxInfo -> Objects.nonNull(taxInfo.getNonTaxable()))
+                                                       .filter(taxInfo -> taxInfo.getNonTaxable() != 0)
+                                                       .limit(1))   //nonTaxable field is the same for all taxes in the lineItem, so get the first one
+                          .map(TaxesType::getNonTaxable)
                           .filter(Objects::nonNull)
                           .map(BigDecimal::valueOf)
                           .reduce(BigDecimal.ZERO, BigDecimal::add)
@@ -319,7 +294,11 @@ public class VertexResponseDataExtractor {
                ? lineItems.stream()
                           .filter(Objects::nonNull)
                           .filter(lineItem -> lineItem.getTaxes() != null && lineItem.getTaxes().size() > 0)
-                          .map(lineItem -> lineItem.getTaxes().get(0))      //taxable field is the same for all taxes in the lineItem, so get the first one
+                          .flatMap(lineItem -> lineItem.getTaxes()
+                                                       .stream()
+                                                       .filter(taxInfo -> Objects.nonNull(taxInfo.getTaxable()))
+                                                       .filter(taxInfo -> taxInfo.getTaxable() != 0)
+                                                       .limit(1))     //taxable field is the same for all taxes in the lineItem, so get the first one
                           .map(TaxesType::getTaxable)
                           .filter(Objects::nonNull)
                           .map(BigDecimal::valueOf)

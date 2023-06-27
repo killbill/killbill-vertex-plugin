@@ -114,11 +114,11 @@ public class VertexDao extends PluginDao {
                                vertexResponseDataExtractor.getTotalTaxCalculated(),
                                vertexResponseDataExtractor.getTaxDate(),
                                asString(vertexResponseDataExtractor.getTaxLines()),
-                               asString(vertexResponseDataExtractor.getTransactionSummary()),
+                               asString(vertexResponseDataExtractor.getTaxSummary()),
                                asString(vertexResponseDataExtractor.getAddresses()),
                                SUCCESS,
                                null,
-                               asString(vertexResponseDataExtractor.getAdditionalData()),
+                               null,
                                toLocalDateTime(utcNow),
                                kbTenantId.toString())
                        .execute();
