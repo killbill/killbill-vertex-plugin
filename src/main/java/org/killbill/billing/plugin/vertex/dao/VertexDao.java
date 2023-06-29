@@ -18,7 +18,6 @@
 package org.killbill.billing.plugin.vertex.dao;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -37,7 +36,6 @@ import org.jooq.impl.DSL;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.plugin.dao.PluginDao;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
-import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseTypeData;
 import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,11 +68,12 @@ public class VertexDao extends PluginDao {
                             final ApiSuccessResponseTransactionResponseType taxResult,
                             final DateTime utcNow,
                             final UUID kbTenantId) throws SQLException {
-        ApiSuccessResponseTransactionResponseTypeData resultData = taxResult.getData();
 
-        if (Objects.isNull(resultData)) {
+        if (Objects.isNull(taxResult.getData())) {
             return;
         }
+
+        final VertexResponseDataExtractor vertexResponseDataExtractor = new VertexResponseDataExtractor(taxResult.getData());
 
         execute(dataSource.getConnection(),
                 (WithConnectionCallback<Void>) conn -> {
@@ -83,42 +82,42 @@ public class VertexDao extends PluginDao {
                                    VERTEX_RESPONSES.KB_ACCOUNT_ID,
                                    VERTEX_RESPONSES.KB_INVOICE_ID,
                                    VERTEX_RESPONSES.KB_INVOICE_ITEM_IDS,
-                                    VERTEX_RESPONSES.DOC_CODE,
+                                   VERTEX_RESPONSES.DOC_CODE,
                                    VERTEX_RESPONSES.DOC_DATE,
                                    VERTEX_RESPONSES.TIMESTAMP,
                                    VERTEX_RESPONSES.TOTAL_AMOUNT,
-                                  /* VERTEX_RESPONSES.TOTAL_DISCOUNT,
+                                   VERTEX_RESPONSES.TOTAL_DISCOUNT,
                                    VERTEX_RESPONSES.TOTAL_EXEMPTION,
-                                   VERTEX_RESPONSES.TOTAL_TAXABLE,*/
+                                   VERTEX_RESPONSES.TOTAL_TAXABLE,
                                    VERTEX_RESPONSES.TOTAL_TAX,
-                               /* VERTEX_RESPONSES.TOTAL_TAX_CALCULATED,*/
+                                   VERTEX_RESPONSES.TOTAL_TAX_CALCULATED,
                                    VERTEX_RESPONSES.TAX_DATE,
                                    VERTEX_RESPONSES.TAX_LINES,
-                                 /*  VERTEX_RESPONSES.TAX_SUMMARY,
-                                   VERTEX_RESPONSES.TAX_ADDRESSES,*/
+                                   VERTEX_RESPONSES.TAX_SUMMARY,
+                                   VERTEX_RESPONSES.TAX_ADDRESSES,
                                    VERTEX_RESPONSES.RESULT_CODE,
-                               /*VERTEX_RESPONSES.MESSAGES,*/
+                                   VERTEX_RESPONSES.MESSAGES,
                                    VERTEX_RESPONSES.ADDITIONAL_DATA,
                                    VERTEX_RESPONSES.CREATED_DATE,
                                    VERTEX_RESPONSES.KB_TENANT_ID)
                        .values(kbAccountId.toString(),
                                kbInvoiceId.toString(),
                                kbInvoiceItemsIdsAsString(kbInvoiceItems),
-                               resultData.getTransactionId(),
-                               resultData.getDocumentDate() == null ? null : resultData.getDocumentDate().atStartOfDay(),
+                               vertexResponseDataExtractor.getDocumentCode(),
+                               vertexResponseDataExtractor.getDocumentDate(),
                                null,
-                               resultData.getTotal() == null ? null : BigDecimal.valueOf(resultData.getTotal()),
-                              /* BigDecimal.valueOf(resultData.getDiscount().getDiscountValue()),
-                               BigDecimal.valueOf(resultData.totalExempt),
-                               BigDecimal.valueOf(resultData.totalTaxable),*/
-                               resultData.getTotalTax() == null ? null : BigDecimal.valueOf(resultData.getTotalTax()),
-                               /* BigDecimal.valueOf(resultData.totalTaxCalculated),*/
-                               resultData.getTaxPointDate() == null ? null : resultData.getTaxPointDate().atStartOfDay(),
-                               asString(resultData.getLineItems()),
-                             /*  asString(resultData.summary),
-                               asString(resultData.addresses),*/
+                               vertexResponseDataExtractor.getTotalAmount(),
+                               vertexResponseDataExtractor.getTotalDiscount(),
+                               vertexResponseDataExtractor.getTotalTaxExempt(),
+                               vertexResponseDataExtractor.getTotalTaxable(),
+                               vertexResponseDataExtractor.getTotalTax(),
+                               vertexResponseDataExtractor.getTotalTaxCalculated(),
+                               vertexResponseDataExtractor.getTaxDate(),
+                               asString(vertexResponseDataExtractor.getTaxLines()),
+                               asString(vertexResponseDataExtractor.getTaxSummary()),
+                               asString(vertexResponseDataExtractor.getAddresses()),
                                SUCCESS,
-                               /*asString(resultData.messages),*/
+                               null,
                                null,
                                toLocalDateTime(utcNow),
                                kbTenantId.toString())
