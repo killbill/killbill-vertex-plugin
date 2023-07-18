@@ -21,8 +21,8 @@ import java.util.Properties;
 
 import org.testng.annotations.Test;
 
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_COMPANY_DIVISION_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_COMPANY_NAME_PROPERTY;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 
@@ -35,15 +35,15 @@ public class VertexApiConfigurationHandlerTest {
     public void testCreateConfigurable() {
         //given
         final Properties properties = new Properties();
-        properties.put(VERTEX_OSERIES_COMPANY_NAME_PROPERTY, "companyName");
-        properties.put(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, "companyDivision");
+        properties.put(VERTEX_COMPANY_NAME_PROPERTY, "companyName");
+        properties.put(VERTEX_COMPANY_DIVISION_PROPERTY, "companyDivision");
 
         //when
         VertexApiClient vertexApiClient = vertexApiConfigurationHandler.createConfigurable(properties);
 
         //then
         assertNotNull(vertexApiClient);
-        assertEquals(vertexApiClient.getCompanyName(), properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY));
-        assertEquals(vertexApiClient.getCompanyDivision(), properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY));
+        assertEquals(vertexApiClient.getCompanyName(), properties.getProperty(VERTEX_COMPANY_NAME_PROPERTY));
+        assertEquals(vertexApiClient.getCompanyDivision(), properties.getProperty(VERTEX_COMPANY_DIVISION_PROPERTY));
     }
 }
