@@ -28,7 +28,7 @@ The following properties are optional:
 
 * `org.killbill.billing.plugin.vertex.companyName`: company name
 * `org.killbill.billing.plugin.vertex.companyDivision`: company division
-* `org.killbill.billing.plugin.vertex.adjustments.lenientMode`, when true Vertex-plugin skips any adjustment items from Invoice for which the previousInvoiceId is not present (i.e. missing) or else leads to IllegalStateException and fails to generate invoice
+* `org.killbill.billing.plugin.vertex.adjustments.lenientMode`: when true, Vertex-plugin will skip adjustment items if previousInvoiceId is missing. Otherwise, an IllegalStateException is thrown, and invoice generation is aborted
 
 These properties can be specified globally via System Properties or on a per tenant basis:
 
