@@ -34,6 +34,7 @@ import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_ADJUSTMENTS_LENIENT_MODE_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY;
@@ -51,6 +52,7 @@ public class VertexApiClient {
 
     private final String companyName;
     private final String companyDivision;
+    private final boolean skipAnomalousAdjustments;
 
     public VertexApiClient(final Properties properties) {
         final String url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
@@ -59,6 +61,7 @@ public class VertexApiClient {
 
         this.companyName = properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY);
         this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
+        this.skipAnomalousAdjustments = Boolean.parseBoolean(properties.getProperty(VERTEX_ADJUSTMENTS_LENIENT_MODE_PROPERTY));
 
         final ApiClient apiClient = initApiClient(url, clientId, clientSecret);
         this.calculateTaxApi = apiClient != null ? new CalculateTaxApi(apiClient) : null;
@@ -72,6 +75,10 @@ public class VertexApiClient {
 
     public String getCompanyDivision() {
         return companyDivision;
+    }
+
+    public boolean shouldSkipAnomalousAdjustments() {
+        return this.skipAnomalousAdjustments;
     }
 
     public ApiSuccessResponseTransactionResponseType calculateTaxes(SaleRequestType taxRequest) throws ApiException {

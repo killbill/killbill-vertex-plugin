@@ -215,7 +215,12 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                         pluginProperties,
                                                         taxItemsDate,
                                                         vertexApiClient.getCompanyName(),
-                                                        vertexApiClient.getCompanyDivision());
+                                                        vertexApiClient.getCompanyDivision(),
+                                                        vertexApiClient.shouldSkipAnomalousAdjustments());
+
+        if (taxRequest == null) {
+            return ImmutableList.of();
+        }
 
         logger.info("CreateTransaction req: {}", taxRequest);
 
@@ -300,10 +305,23 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                          @Nullable final String originalInvoiceReferenceCode,
                                          final boolean dryRun,
                                          final Iterable<PluginProperty> pluginProperties,
-                                         final LocalDate taxItemsDate, final String companyName, final String companyDivision) {
-        Preconditions.checkState((originalInvoiceReferenceCode == null && (adjustmentItems == null || adjustmentItems.isEmpty())) ||
-                                 (originalInvoiceReferenceCode != null && (adjustmentItems != null && !adjustmentItems.isEmpty())),
-                                 "Invalid combination of originalInvoiceReferenceCode %s and adjustments %s", originalInvoiceReferenceCode, adjustmentItems);
+                                         final LocalDate taxItemsDate,
+                                         final String companyName,
+                                         final String companyDivision,
+                                         final boolean skipAnomalousAdjustments) {
+
+        try {
+            Preconditions.checkState((originalInvoiceReferenceCode == null && (adjustmentItems == null || adjustmentItems.isEmpty())) ||
+                                     (originalInvoiceReferenceCode != null && (adjustmentItems != null && !adjustmentItems.isEmpty())),
+                                     "Invalid combination of originalInvoiceReferenceCode %s and adjustments %s", originalInvoiceReferenceCode, adjustmentItems);
+        } catch (IllegalStateException e) {
+            if (skipAnomalousAdjustments) {
+                logger.warn("Ignoring tax request due to inconsistent adjustments: originalInvoiceReferenceCode={}, adjustmentItems={}", originalInvoiceReferenceCode, adjustmentItems);
+                return null;
+            } else {
+                throw e;
+            }
+        }
 
         Preconditions.checkState((adjustmentItems == null || adjustmentItems.isEmpty()) || adjustmentItems.size() == taxableItems.size(),
                                  "Invalid number of adjustments %s for taxable items %s", adjustmentItems, taxableItems);

@@ -27,4 +27,5 @@ public class VertexConfigProperties {
 
     public static final String VERTEX_OSERIES_COMPANY_NAME_PROPERTY = PROPERTY_PREFIX + "companyName";
     public static final String VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY = PROPERTY_PREFIX + "companyDivision";
+    public static final String VERTEX_ADJUSTMENTS_LENIENT_MODE_PROPERTY = PROPERTY_PREFIX + "adjustments.lenientMode";
 }
