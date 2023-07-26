@@ -63,8 +63,8 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         final Clock clock = new DefaultClock();
 
         pluginProperties = new LinkedList<>();
-        pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_COMPANY_DIVISION_PROPERTY, "328", false));
-        pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_COMPANY_NAME_PROPERTY, "Kill Bill Parent", false));
+        pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY, "328", false));
+        pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY, "Kill Bill Parent", false));
 
         account = TestUtils.buildAccount(Currency.USD, "45 Fremont Street", null, "San Francisco", "CA", "94105", "US");
 

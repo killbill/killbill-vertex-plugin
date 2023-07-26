@@ -35,8 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_ADJUSTMENTS_LENIENT_MODE_PROPERTY;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_COMPANY_DIVISION_PROPERTY;
-import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_COMPANY_NAME_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_URL_PROPERTY;
@@ -59,8 +59,8 @@ public class VertexApiClient {
         final String clientId = properties.getProperty(VERTEX_OSERIES_CLIENT_ID_PROPERTY);
         final String clientSecret = properties.getProperty(VERTEX_OSERIES_CLIENT_SECRET_PROPERTY);
 
-        this.companyName = properties.getProperty(VERTEX_COMPANY_NAME_PROPERTY);
-        this.companyDivision = properties.getProperty(VERTEX_COMPANY_DIVISION_PROPERTY);
+        this.companyName = properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY);
+        this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
         this.skipAnomalousAdjustments = Boolean.parseBoolean(properties.getProperty(VERTEX_ADJUSTMENTS_LENIENT_MODE_PROPERTY));
 
         final ApiClient apiClient = initApiClient(url, clientId, clientSecret);
