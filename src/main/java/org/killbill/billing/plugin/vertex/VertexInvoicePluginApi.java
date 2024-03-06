@@ -19,18 +19,13 @@ package org.killbill.billing.plugin.vertex;
 
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.killbill.billing.ObjectType;
 import org.killbill.billing.account.api.Account;
-import org.killbill.billing.catalog.api.CatalogApiException;
-import org.killbill.billing.catalog.api.Plan;
-import org.killbill.billing.catalog.api.StaticCatalog;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.plugin.api.InvoiceContext;
@@ -134,7 +129,6 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
 
     private void checkForTaxCodes(final Invoice invoice, final Collection<PluginProperty> properties, final TenantContext context) {
         checkForTaxCodesInCustomFields(invoice, properties, context);
-        checkForTaxCodesOnProducts(invoice, properties, context);
     }
 
     private void checkForTaxCodesInCustomFields(final Invoice invoice, final Collection<PluginProperty> properties, final TenantContext context) {
@@ -156,37 +150,6 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
             final UUID invoiceItemId = customField.getObjectId();
             final String taxCode = customField.getFieldValue();
             addTaxCodeToInvoiceItem(invoiceItemId, taxCode, properties);
-        }
-    }
-
-    private void checkForTaxCodesOnProducts(final Invoice invoice, final Collection<PluginProperty> properties, final TenantContext context) {
-        final Map<String, String> planToProductCache = new HashMap<>();
-        final Map<String, String> productToTaxCodeCache = new HashMap<>();
-
-        for (final InvoiceItem invoiceItem : invoice.getInvoiceItems()) {
-            final String planName = invoiceItem.getPlanName();
-            if (planName == null) {
-                continue;
-            }
-
-            if (planToProductCache.get(planName) == null) {
-                try {
-                    final StaticCatalog catalog = killbillAPI.getCatalogUserApi().getCurrentCatalog(null, context);
-                    final Plan plan = catalog.findPlan(planName);
-                    planToProductCache.put(planName, plan.getProduct().getName());
-                } catch (final CatalogApiException e) {
-                    continue;
-                }
-            }
-            final String productName = planToProductCache.get(planName);
-            if (productName == null) {
-                continue;
-            }
-
-            final String taxCode = productToTaxCodeCache.get(productName);
-            if (taxCode != null) {
-                addTaxCodeToInvoiceItem(invoiceItem.getId(), productToTaxCodeCache.get(productName), properties);
-            }
         }
     }
 
