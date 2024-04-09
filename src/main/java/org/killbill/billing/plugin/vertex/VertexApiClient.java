@@ -109,7 +109,7 @@ public class VertexApiClient {
         }
 
         ApiClient apiClient = new ApiClient();
-        apiClient.setBasePath(url + "/vertex-ws/");
+        apiClient.setBasePath(url + "/vertex-ws");
 
         OAuthClient oAuthClient = new OAuthClient();
         final String token = oAuthClient.getToken(url, clientId, clientSecret).getAccessToken();
