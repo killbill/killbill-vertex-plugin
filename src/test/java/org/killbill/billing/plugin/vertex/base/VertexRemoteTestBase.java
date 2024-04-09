@@ -96,7 +96,7 @@ public abstract class VertexRemoteTestBase {
         OAuthClient oAuthClient = new OAuthClient();
 
         ApiClient apiClient = new ApiClient();
-        apiClient.setBasePath(getUrl() + "/vertex-ws/");
+        apiClient.setBasePath(getUrl() + "/vertex-ws");
         String token = oAuthClient.getToken(getUrl(), getClientId(), getClientSecret()).getAccessToken();
         apiClient.setAccessToken(token);
 
