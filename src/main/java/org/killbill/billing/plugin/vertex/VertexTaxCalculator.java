@@ -71,12 +71,24 @@ import com.google.common.collect.Multimap;
 public class VertexTaxCalculator extends PluginTaxCalculator {
 
     public static final String TAX_CODE = "taxCode";
+    public static final String PRODUCT_VALUE = "productValue";
+    public static final String USAGE_CLASS = "usageClass";
+
     public static final String LOCATION_ADDRESS1 = "locationAddress1";
     public static final String LOCATION_ADDRESS2 = "locationAddress2";
     public static final String LOCATION_CITY = "locationCity";
     public static final String LOCATION_REGION = "locationRegion";
     public static final String LOCATION_POSTAL_CODE = "locationPostalCode";
     public static final String LOCATION_COUNTRY = "locationCountry";
+
+    public static final String SELLER_DIVISION = "sellerDivision";
+    public static final String SELLER_ADDRESS1 = "sellerAddress1";
+    public static final String SELLER_ADDRESS2 = "sellerAddress2";
+    public static final String SELLER_CITY = "sellerCity";
+    public static final String SELLER_REGION = "sellerRegion";
+    public static final String SELLER_POSTAL_CODE = "sellerPostalCode";
+    public static final String SELLER_COUNTRY = "sellerCountry";
+
     public static final String KB_TRANSACTION_PREFIX = "kb_";
 
     private static final Logger logger = LoggerFactory.getLogger(VertexTaxCalculator.class);
@@ -307,7 +319,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                          final Iterable<PluginProperty> pluginProperties,
                                          final LocalDate taxItemsDate,
                                          final String companyName,
-                                         final String companyDivision,
+                                         final String defaultCompanyDivision,
                                          final boolean skipAnomalousAdjustments) {
 
         try {
@@ -361,7 +373,12 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
         SellerType sellerType = new SellerType();
         sellerType.setCompany(companyName);
-        sellerType.setDivision(companyDivision);
+
+        final String sellerDivision = PluginProperties.findPluginPropertyValue(SELLER_DIVISION, pluginProperties);
+        sellerType.setDivision(sellerDivision != null ? sellerDivision : defaultCompanyDivision);
+
+        sellerType.setAdministrativeOrigin(extractSellerAddress(pluginProperties));
+
         taxRequest.setSeller(sellerType);
 
         List<SaleRequestLineItemType> lineItemList = new ArrayList<>();
@@ -388,11 +405,13 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         final SaleRequestLineItemType lineItemModel = new SaleRequestLineItemType();
         lineItemModel.setLineItemId(taxableItem.getId().toString());
         lineItemModel.setLineItemNumber(lineNumber);
+        lineItemModel.setUsageClass(PluginProperties.findPluginPropertyValue(String.format("%s_%s", USAGE_CLASS, taxableItem.getId()), pluginProperties));
         // lineItemModel.setTaxDate(); //set to taxItemsDate if needed
 
         // SKU
         Product product = new Product();
         product.setProductClass(PluginProperties.findPluginPropertyValue(String.format("%s_%s", TAX_CODE, taxableItem.getId()), pluginProperties));
+        product.setValue(PluginProperties.findPluginPropertyValue(String.format("%s_%s", PRODUCT_VALUE, taxableItem.getId()), pluginProperties));
         lineItemModel.setProduct(product);
 
         // Compute the amount to tax or the amount to adjust
@@ -448,5 +467,18 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         }
 
         return addressLocationInfo;
+    }
+
+    private LocationType extractSellerAddress(final Iterable<PluginProperty> pluginProperties) {
+        final LocationType sellerAddress = new LocationType();
+
+        sellerAddress.setStreetAddress1(PluginProperties.findPluginPropertyValue(SELLER_ADDRESS1, pluginProperties));
+        sellerAddress.setStreetAddress2(PluginProperties.findPluginPropertyValue(SELLER_ADDRESS2, pluginProperties));
+        sellerAddress.setCity(PluginProperties.findPluginPropertyValue(SELLER_CITY, pluginProperties));
+        sellerAddress.setMainDivision(PluginProperties.findPluginPropertyValue(SELLER_REGION, pluginProperties));
+        sellerAddress.setPostalCode(PluginProperties.findPluginPropertyValue(SELLER_POSTAL_CODE, pluginProperties));
+        sellerAddress.setCountry(PluginProperties.findPluginPropertyValue(SELLER_COUNTRY, pluginProperties));
+
+        return sellerAddress;
     }
 }
