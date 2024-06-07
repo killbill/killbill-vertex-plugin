@@ -76,8 +76,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     public static final String PRODUCT_VALUE = "productValue";
     public static final String USAGE_CLASS = "usageClass";
 
-    public static final String CUSTOMER_TAX_REGISTRATION_NUMBER = "customerTaxRegistrationNumber";
-
+    public static final String TAX_REGISTRATION_NUMBER = "taxRegistrationNumber";
     public static final String LOCATION_ADDRESS1 = "locationAddress1";
     public static final String LOCATION_ADDRESS2 = "locationAddress2";
     public static final String LOCATION_CITY = "locationCity";
@@ -426,7 +425,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
         taxRegistration.setHasPhysicalPresenceIndicator(true);
         taxRegistration.setIsoCountryCode(PluginProperties.findPluginPropertyValue(LOCATION_COUNTRY, pluginProperties));
-        taxRegistration.setTaxRegistrationNumber(PluginProperties.findPluginPropertyValue(CUSTOMER_TAX_REGISTRATION_NUMBER, pluginProperties));
+        taxRegistration.setTaxRegistrationNumber(PluginProperties.findPluginPropertyValue(TAX_REGISTRATION_NUMBER, pluginProperties));
 
         return Collections.singletonList(taxRegistration);
     }
