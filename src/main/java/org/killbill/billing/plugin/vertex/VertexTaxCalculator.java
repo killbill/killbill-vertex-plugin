@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -55,6 +56,7 @@ import org.killbill.billing.plugin.vertex.gen.client.model.SaleRequestLineItemTy
 import org.killbill.billing.plugin.vertex.gen.client.model.SaleRequestType;
 import org.killbill.billing.plugin.vertex.gen.client.model.SaleTransactionTypeEnum;
 import org.killbill.billing.plugin.vertex.gen.client.model.SellerType;
+import org.killbill.billing.plugin.vertex.gen.client.model.TaxRegistrationType;
 import org.killbill.billing.plugin.vertex.gen.client.model.TaxesType;
 import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;
 import org.killbill.billing.util.callcontext.TenantContext;
@@ -73,6 +75,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     public static final String TAX_CODE = "taxCode";
     public static final String PRODUCT_VALUE = "productValue";
     public static final String USAGE_CLASS = "usageClass";
+
+    public static final String CUSTOMER_TAX_REGISTRATION_NUMBER = "customerTaxRegistrationNumber";
 
     public static final String LOCATION_ADDRESS1 = "locationAddress1";
     public static final String LOCATION_ADDRESS2 = "locationAddress2";
@@ -227,7 +231,6 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                         pluginProperties,
                                                         taxItemsDate,
                                                         vertexApiClient.getCompanyName(),
-                                                        vertexApiClient.getCompanyDivision(),
                                                         vertexApiClient.shouldSkipAnomalousAdjustments());
 
         if (taxRequest == null) {
@@ -319,7 +322,6 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                          final Iterable<PluginProperty> pluginProperties,
                                          final LocalDate taxItemsDate,
                                          final String companyName,
-                                         final String defaultCompanyDivision,
                                          final boolean skipAnomalousAdjustments) {
 
         try {
@@ -362,24 +364,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         currencyType.setIsoCurrencyCodeAlpha(invoice.getCurrency().name());
         taxRequest.setCurrency(currencyType);
 
-        CustomerType customerType = new CustomerType();
-        LocationType customerDestination = toAddress(account, pluginProperties);
-        customerType.setDestination(customerDestination);
-        CustomerCodeType code = new CustomerCodeType();
-        code.setValue(MoreObjects.firstNonNull(account.getExternalKey(), account.getId()).toString());
-        customerType.setCustomerCode(code);
-
-        taxRequest.setCustomer(customerType);
-
-        SellerType sellerType = new SellerType();
-        sellerType.setCompany(companyName);
-
-        final String sellerDivision = PluginProperties.findPluginPropertyValue(SELLER_DIVISION, pluginProperties);
-        sellerType.setDivision(sellerDivision != null ? sellerDivision : defaultCompanyDivision);
-
-        sellerType.setAdministrativeOrigin(extractSellerAddress(pluginProperties));
-
-        taxRequest.setSeller(sellerType);
+        taxRequest.setCustomer(buildCustomer(account, pluginProperties));
+        taxRequest.setSeller(buildSeller(pluginProperties, companyName));
 
         List<SaleRequestLineItemType> lineItemList = new ArrayList<>();
 
@@ -395,6 +381,54 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         taxRequest.setLineItems(lineItemList);
 
         return taxRequest;
+    }
+
+    private SellerType buildSeller(final Iterable<PluginProperty> pluginProperties, final String companyName) {
+        final SellerType sellerType = new SellerType();
+
+        sellerType.setCompany(companyName);
+        sellerType.setDivision(PluginProperties.findPluginPropertyValue(SELLER_DIVISION, pluginProperties));
+        sellerType.setPhysicalOrigin(buildSellerAddress(pluginProperties));
+
+        return sellerType;
+    }
+
+    private LocationType buildSellerAddress(final Iterable<PluginProperty> pluginProperties) {
+        final LocationType sellerAddress = new LocationType();
+
+        sellerAddress.setStreetAddress1(PluginProperties.findPluginPropertyValue(SELLER_ADDRESS1, pluginProperties));
+        sellerAddress.setStreetAddress2(PluginProperties.findPluginPropertyValue(SELLER_ADDRESS2, pluginProperties));
+        sellerAddress.setCity(PluginProperties.findPluginPropertyValue(SELLER_CITY, pluginProperties));
+        sellerAddress.setMainDivision(PluginProperties.findPluginPropertyValue(SELLER_REGION, pluginProperties));
+        sellerAddress.setPostalCode(PluginProperties.findPluginPropertyValue(SELLER_POSTAL_CODE, pluginProperties));
+        sellerAddress.setCountry(PluginProperties.findPluginPropertyValue(SELLER_COUNTRY, pluginProperties));
+
+        return sellerAddress;
+    }
+
+    private CustomerType buildCustomer(final Account account, final Iterable<PluginProperty> pluginProperties) {
+        final CustomerType customerType = new CustomerType();
+
+        final LocationType customerDestination = toAddress(account, pluginProperties);
+        customerType.setDestination(customerDestination);
+
+        final CustomerCodeType code = new CustomerCodeType();
+        code.setValue(MoreObjects.firstNonNull(account.getExternalKey(), account.getId()).toString());
+        customerType.setCustomerCode(code);
+
+        customerType.setTaxRegistrations(buildCustomerTaxRegistrations(pluginProperties));
+
+        return customerType;
+    }
+
+    private List<TaxRegistrationType> buildCustomerTaxRegistrations(final Iterable<PluginProperty> pluginProperties) {
+        final TaxRegistrationType taxRegistration = new TaxRegistrationType();
+
+        taxRegistration.setHasPhysicalPresenceIndicator(true);
+        taxRegistration.setIsoCountryCode(PluginProperties.findPluginPropertyValue(LOCATION_COUNTRY, pluginProperties));
+        taxRegistration.setTaxRegistrationNumber(PluginProperties.findPluginPropertyValue(CUSTOMER_TAX_REGISTRATION_NUMBER, pluginProperties));
+
+        return Collections.singletonList(taxRegistration);
     }
 
     private SaleRequestLineItemType toLine(final InvoiceItem taxableItem,
@@ -467,18 +501,5 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         }
 
         return addressLocationInfo;
-    }
-
-    private LocationType extractSellerAddress(final Iterable<PluginProperty> pluginProperties) {
-        final LocationType sellerAddress = new LocationType();
-
-        sellerAddress.setStreetAddress1(PluginProperties.findPluginPropertyValue(SELLER_ADDRESS1, pluginProperties));
-        sellerAddress.setStreetAddress2(PluginProperties.findPluginPropertyValue(SELLER_ADDRESS2, pluginProperties));
-        sellerAddress.setCity(PluginProperties.findPluginPropertyValue(SELLER_CITY, pluginProperties));
-        sellerAddress.setMainDivision(PluginProperties.findPluginPropertyValue(SELLER_REGION, pluginProperties));
-        sellerAddress.setPostalCode(PluginProperties.findPluginPropertyValue(SELLER_POSTAL_CODE, pluginProperties));
-        sellerAddress.setCountry(PluginProperties.findPluginPropertyValue(SELLER_COUNTRY, pluginProperties));
-
-        return sellerAddress;
     }
 }
