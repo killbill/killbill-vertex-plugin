@@ -64,6 +64,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
 
         pluginProperties = new LinkedList<>();
         pluginProperties.add(new PluginProperty(VertexTaxCalculator.SELLER_DIVISION, "328", false));
+        pluginProperties.add(new PluginProperty(VertexTaxCalculator.SELLER_COUNTRY, "USA", false));
         pluginProperties.add(new PluginProperty(VertexConfigProperties.VERTEX_OSERIES_COMPANY_NAME_PROPERTY, "Kill Bill Parent", false));
 
         account = TestUtils.buildAccount(Currency.USD, "45 Fremont Street", null, "San Francisco", "CA", "94105", "US");

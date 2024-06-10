@@ -71,6 +71,8 @@ public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
         vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
 
         calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
+
+        pluginProperties.add(new PluginProperty(VertexTaxCalculator.SELLER_DIVISION, "328", false));
     }
 
     @Test(groups = "integration")

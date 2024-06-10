@@ -387,7 +387,11 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
         sellerType.setCompany(companyName);
         sellerType.setDivision(PluginProperties.findPluginPropertyValue(SELLER_DIVISION, pluginProperties));
-        sellerType.setPhysicalOrigin(buildSellerAddress(pluginProperties));
+
+        final String sellerCountry = PluginProperties.findPluginPropertyValue(SELLER_COUNTRY, pluginProperties);
+        if (sellerCountry != null) { //country is required field
+            sellerType.setPhysicalOrigin(buildSellerAddress(pluginProperties));
+        }
 
         return sellerType;
     }
