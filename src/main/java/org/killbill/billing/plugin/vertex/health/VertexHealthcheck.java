@@ -68,7 +68,7 @@ public class VertexHealthcheck implements Healthcheck {
                 logger.error("health-check via TaxAreaLookup API failed - " + e.getMessage());
                 return HealthStatus.unHealthy("health check failed");
             }
-            return HealthStatus.healthy();
+            return HealthStatus.healthy("Vertex OK");
         }
     }
 }
