@@ -33,7 +33,6 @@ import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.api.InvoiceItemType;
 import org.killbill.billing.plugin.TestUtils;
 import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
-import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseTypeData;
 import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;
 import org.testng.Assert;
@@ -59,22 +58,20 @@ public class VertexDaoTestDaoITest extends VertexRemoteTestBase {
         final InvoiceItem taxableItem2 = TestUtils.buildInvoiceItem(invoice, InvoiceItemType.RECURRING, BigDecimal.TEN, null);
         final InvoiceItem adjustmentItem21 = TestUtils.buildInvoiceItem(invoice, InvoiceItemType.REPAIR_ADJ, BigDecimal.ONE.negate(), taxableItem2.getId());
 
-        final ApiSuccessResponseTransactionResponseType taxResultS1 = new ApiSuccessResponseTransactionResponseType();
         ApiSuccessResponseTransactionResponseTypeData dataS1 = new ApiSuccessResponseTransactionResponseTypeData();
         dataS1.setTotal(13d);
-        taxResultS1.setData(dataS1);
+        final VertexResponseDataExtractor taxResultExtractorS1 = new VertexResponseDataExtractor(dataS1);
 
-        final ApiSuccessResponseTransactionResponseType taxResultS2 = new ApiSuccessResponseTransactionResponseType();
         ApiSuccessResponseTransactionResponseTypeData dataS2 = new ApiSuccessResponseTransactionResponseTypeData();
         dataS2.setTotal(123d);
-        taxResultS2.setData(dataS2);
+        final VertexResponseDataExtractor taxResultExtractorS2 = new VertexResponseDataExtractor(dataS2);
 
         // Success
         dao.addResponse(kbAccountId,
                         kbInvoiceId,
                         ImmutableMap.of(taxableItem1.getId(), ImmutableList.of(),
                                         taxableItem2.getId(), ImmutableList.of()),
-                        taxResultS1,
+                        taxResultExtractorS1,
                         new DateTime(DateTimeZone.UTC),
                         kbTenantId);
         // Success (subsequent adjustments)
@@ -82,7 +79,7 @@ public class VertexDaoTestDaoITest extends VertexRemoteTestBase {
                         kbInvoiceId,
                         ImmutableMap.of(taxableItem1.getId(), ImmutableList.of(adjustmentItem11, adjustmentItem12),
                                         taxableItem2.getId(), ImmutableList.of(adjustmentItem21)),
-                        taxResultS2,
+                        taxResultExtractorS2,
                         new DateTime(DateTimeZone.UTC),
                         kbTenantId);
         // Error
@@ -96,14 +93,14 @@ public class VertexDaoTestDaoITest extends VertexRemoteTestBase {
         dao.addResponse(kbAccountId,
                         UUID.randomUUID(),
                         ImmutableMap.of(),
-                        new ApiSuccessResponseTransactionResponseType(),
+                        (VertexResponseDataExtractor) null,
                         new DateTime(DateTimeZone.UTC),
                         kbTenantId);
 
         final List<VertexResponsesRecord> responses = dao.getSuccessfulResponses(kbInvoiceId, kbTenantId);
         Assert.assertEquals(responses.size(), 2);
-        Assert.assertEquals(responses.get(0).getTotalAmount().doubleValue(), taxResultS1.getData().getTotal().doubleValue());
-        Assert.assertEquals(responses.get(1).getTotalAmount().doubleValue(), taxResultS2.getData().getTotal().doubleValue());
+        Assert.assertEquals(responses.get(0).getTotalAmount().doubleValue(), dataS1.getTotal().doubleValue());
+        Assert.assertEquals(responses.get(1).getTotalAmount().doubleValue(), dataS2.getTotal().doubleValue());
 
         final Map<UUID, Set<UUID>> kbInvoiceItems = dao.getTaxedItemsWithAdjustments(responses);
         Assert.assertEquals(kbInvoiceItems.size(), 2);

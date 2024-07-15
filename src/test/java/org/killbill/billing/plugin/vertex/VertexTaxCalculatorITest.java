@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import org.killbill.billing.ObjectType;
 import org.killbill.billing.account.api.Account;
 import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.invoice.api.Invoice;
@@ -33,9 +34,11 @@ import org.killbill.billing.invoice.api.InvoiceUserApi;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.TestUtils;
-import org.killbill.billing.plugin.api.PluginTenantContext;
+import org.killbill.billing.plugin.api.PluginCallContext;
+import org.killbill.billing.plugin.api.core.PluginCustomField;
 import org.killbill.billing.plugin.vertex.base.VertexRemoteTestBase;
-import org.killbill.billing.util.callcontext.TenantContext;
+import org.killbill.billing.util.api.CustomFieldUserApi;
+import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.clock.Clock;
 import org.killbill.clock.DefaultClock;
 import org.mockito.Mockito;
@@ -45,18 +48,26 @@ import org.testng.annotations.Test;
 
 import com.google.common.collect.ImmutableMap;
 
+import static org.killbill.billing.plugin.vertex.VertexTaxCalculator.INVOICE_TAX_RATE_CUSTOM_FIELD_NAME;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+
 public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
 
     private final Clock clock = new DefaultClock();
     private final Collection<PluginProperty> pluginProperties = new LinkedList<>();
     private final UUID tenantId = UUID.randomUUID();
-    private final TenantContext tenantContext = new PluginTenantContext(null, tenantId);
+    private final CallContext tenantContext = new PluginCallContext("", clock.getUTCNow(), null, tenantId);
 
     private Account account;
     private Account account2;
     private Account account3;
     private OSGIKillbillAPI osgiKillbillAPI;
     private VertexTaxCalculator calculator;
+    private CustomFieldUserApi customFieldUserApi;
 
     @BeforeMethod(groups = "integration")
     public void setUp() throws Exception {
@@ -66,6 +77,10 @@ public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
 
         osgiKillbillAPI = TestUtils.buildOSGIKillbillAPI(account);
         Mockito.when(osgiKillbillAPI.getInvoiceUserApi()).thenReturn(Mockito.mock(InvoiceUserApi.class));
+
+        customFieldUserApi = Mockito.mock(CustomFieldUserApi.class);
+        Mockito.doNothing().when(customFieldUserApi).updateCustomFields(any(List.class), any(CallContext.class));
+        Mockito.when(osgiKillbillAPI.getCustomFieldUserApi()).thenReturn(customFieldUserApi);
 
         final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
@@ -94,6 +109,38 @@ public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
         //then
         Assert.assertEquals(dao.getSuccessfulResponses(invoice.getId(), tenantId).size(), 2);
         Assert.assertEquals(initialTaxItems.size(), 8);
+
+        verify(customFieldUserApi, times(2)).updateCustomFields(
+                argThat(customFields -> {
+                    if (customFields == null || customFields.isEmpty()) {
+                        return false;
+                    } else if (!(customFields.get(0) instanceof PluginCustomField)) {
+                        return false;
+                    } else {
+                        final PluginCustomField customField = (PluginCustomField) customFields.get(0);
+                        return INVOICE_TAX_RATE_CUSTOM_FIELD_NAME.equals(customField.getFieldName())
+                               && customField.getObjectId().equals(invoice.getId())
+                               && ObjectType.INVOICE.equals(customField.getObjectType())
+                               && customField.getFieldValue() != null;
+                    }
+                }),
+                eq(tenantContext));
+    }
+
+    @Test(groups = "integration")
+    public void testComputeWhenInvoiceTaxRateCalculationSkipped() throws Exception {
+        //given
+        final Invoice invoice = TestUtils.buildInvoice(account);
+        invoice.getInvoiceItems().add(TestUtils.buildInvoiceItem(invoice, InvoiceItemType.EXTERNAL_CHARGE, new BigDecimal("100"), null));
+
+        Mockito.when(vertexApiClient.isSkipInvoiceTaxRateCalculation()).thenReturn(true);
+
+        //when
+        calculator.compute(account, invoice, false, pluginProperties, tenantContext);
+
+        //then
+        verify(customFieldUserApi, times(0)).updateCustomFields(any(List.class), any(CallContext.class));
+        Assert.assertEquals(dao.getSuccessfulResponses(invoice.getId(), tenantId).size(), 1);
     }
 
     @Test(groups = "integration")

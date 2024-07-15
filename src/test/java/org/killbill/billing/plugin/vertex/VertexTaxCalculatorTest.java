@@ -31,7 +31,9 @@ import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.api.InvoiceItemType;
+import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
+import org.killbill.billing.plugin.vertex.dao.VertexResponseDataExtractor;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseTypeData;
 import org.killbill.billing.plugin.vertex.gen.client.model.Jurisdiction;
@@ -40,7 +42,8 @@ import org.killbill.billing.plugin.vertex.gen.client.model.OwnerResponseLineItem
 import org.killbill.billing.plugin.vertex.gen.client.model.SaleMessageTypeEnum;
 import org.killbill.billing.plugin.vertex.gen.client.model.SaleRequestType;
 import org.killbill.billing.plugin.vertex.gen.client.model.TaxesType;
-import org.killbill.billing.util.callcontext.TenantContext;
+import org.killbill.billing.util.api.CustomFieldUserApi;
+import org.killbill.billing.util.callcontext.CallContext;
 import org.killbill.clock.Clock;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -55,6 +58,7 @@ import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.testng.AssertJUnit.assertEquals;
@@ -73,7 +77,7 @@ public class VertexTaxCalculatorTest {
     @Mock
     private Invoice invoice;
     @Mock
-    private TenantContext tenantContext;
+    private CallContext tenantContext;
     @Mock
     private Clock clock;
     @Mock
@@ -92,6 +96,10 @@ public class VertexTaxCalculatorTest {
     private InvoiceItem taxableInvoiceItem;
     @Mock
     private InvoiceItem adjustment;
+    @Mock
+    private OSGIKillbillAPI osgiKillbillAPI;
+    @Mock
+    private CustomFieldUserApi customFieldUserApi;
 
     @InjectMocks
     private VertexTaxCalculator vertexTaxCalculator;
@@ -130,6 +138,9 @@ public class VertexTaxCalculatorTest {
         given(responseLineItem.getLineItemId()).willReturn(TAX_ITEM_ID.toString());
         given(responseLineItem.getTotalTax()).willReturn(MOCK_TAX_AMOUNT_1_01);
         given(apiResponseData.getLineItems()).willReturn(Collections.singletonList(responseLineItem));
+
+        given(osgiKillbillAPI.getCustomFieldUserApi()).willReturn(customFieldUserApi);
+        doNothing().when(customFieldUserApi).updateCustomFields(any(List.class), any(CallContext.class));
     }
 
     @BeforeMethod(groups = "fast")
@@ -148,7 +159,7 @@ public class VertexTaxCalculatorTest {
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
 
         //then
-        verify(vertexDao).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
+        verify(vertexDao, times(0)).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(VertexResponseDataExtractor.class), any(DateTime.class), any(UUID.class));
         assertEquals(0, result.size());
     }
 
@@ -164,7 +175,7 @@ public class VertexTaxCalculatorTest {
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
 
         //then
-        verify(vertexDao, atLeastOnce()).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
+        verify(vertexDao, atLeastOnce()).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(VertexResponseDataExtractor.class), any(DateTime.class), any(UUID.class));
         verify(vertexApiClient).calculateTaxes(argThat(arg -> SaleMessageTypeEnum.INVOICE.equals(arg.getSaleMessageType())));
 
         assertEquals(1, result.size());
@@ -190,7 +201,7 @@ public class VertexTaxCalculatorTest {
 
         //then
         verify(vertexDao, times(0))
-                .addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
+                .addResponse(any(UUID.class), any(UUID.class), anyMap(), any(VertexResponseDataExtractor.class), any(DateTime.class), any(UUID.class));
         verify(vertexApiClient).calculateTaxes(argThat(arg -> SaleMessageTypeEnum.QUOTATION.equals(arg.getSaleMessageType())));
     }
 
@@ -254,7 +265,7 @@ public class VertexTaxCalculatorTest {
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
 
         //then
-        verify(vertexDao, atLeastOnce()).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(ApiSuccessResponseTransactionResponseType.class), any(DateTime.class), any(UUID.class));
+        verify(vertexDao, atLeastOnce()).addResponse(any(UUID.class), any(UUID.class), anyMap(), any(VertexResponseDataExtractor.class), any(DateTime.class), any(UUID.class));
         verify(vertexApiClient).calculateTaxes(argThat(arg -> SaleMessageTypeEnum.INVOICE.equals(arg.getSaleMessageType())));
 
         assertEquals(1, result.size());

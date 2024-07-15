@@ -26,6 +26,7 @@ import org.killbill.billing.plugin.vertex.VertexApiClient;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiClient;
 import org.killbill.billing.plugin.vertex.oauth.OAuthClient;
+import org.mockito.Mockito;
 import org.testng.annotations.AfterSuite;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.BeforeSuite;
@@ -100,6 +101,6 @@ public abstract class VertexRemoteTestBase {
         String token = oAuthClient.getToken(getUrl(), getClientId(), getClientSecret()).getAccessToken();
         apiClient.setAccessToken(token);
 
-        this.vertexApiClient = new VertexApiClient(properties);
+        this.vertexApiClient = Mockito.spy(new VertexApiClient(properties));
     }
 }
