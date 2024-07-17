@@ -32,14 +32,17 @@ import java.util.UUID;
 import javax.annotation.Nullable;
 
 import org.joda.time.LocalDate;
+import org.killbill.billing.ObjectType;
 import org.killbill.billing.account.api.Account;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
+import org.killbill.billing.plugin.api.core.PluginCustomField;
 import org.killbill.billing.plugin.api.invoice.PluginTaxCalculator;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
+import org.killbill.billing.plugin.vertex.dao.VertexResponseDataExtractor;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.CurrencyType;
@@ -59,7 +62,9 @@ import org.killbill.billing.plugin.vertex.gen.client.model.SellerType;
 import org.killbill.billing.plugin.vertex.gen.client.model.TaxRegistrationType;
 import org.killbill.billing.plugin.vertex.gen.client.model.TaxesType;
 import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;
-import org.killbill.billing.util.callcontext.TenantContext;
+import org.killbill.billing.util.api.CustomFieldApiException;
+import org.killbill.billing.util.callcontext.CallContext;
+import org.killbill.billing.util.customfield.CustomField;
 import org.killbill.clock.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -94,6 +99,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
     public static final String KB_TRANSACTION_PREFIX = "kb_";
 
+    static final String INVOICE_TAX_RATE_CUSTOM_FIELD_NAME = "invoiceTaxRate";
+
     private static final Logger logger = LoggerFactory.getLogger(VertexTaxCalculator.class);
 
     private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
@@ -114,12 +121,12 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                      final Invoice newInvoice,
                                      final boolean dryRun,
                                      final Iterable<PluginProperty> pluginProperties,
-                                     final TenantContext tenantContext) throws Exception {
+                                     final CallContext callContext) throws Exception {
         // Retrieve what we've already taxed
-        final List<VertexResponsesRecord> responses = dao.getSuccessfulResponses(newInvoice.getId(), tenantContext.getTenantId());
+        final List<VertexResponsesRecord> responses = dao.getSuccessfulResponses(newInvoice.getId(), callContext.getTenantId());
         final Map<UUID, Set<UUID>> alreadyTaxedItemsWithAdjustments = dao.getTaxedItemsWithAdjustments(responses);
 
-        final List<NewItemToTax> newItemsToTax = computeTaxItems(newInvoice, alreadyTaxedItemsWithAdjustments, tenantContext);
+        final List<NewItemToTax> newItemsToTax = computeTaxItems(newInvoice, alreadyTaxedItemsWithAdjustments, callContext);
         final Map<UUID, InvoiceItem> salesTaxItems = new HashMap<>();
         for (final NewItemToTax newItemToTax : newItemsToTax) {
             if (!newItemToTax.isReturnOnly()) {
@@ -137,7 +144,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                  null,
                                                  dryRun,
                                                  pluginProperties,
-                                                 tenantContext.getTenantId()));
+                                                 callContext));
         }
 
         // Handle returns by original invoice (1 return call for each original invoice)
@@ -159,7 +166,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                 adjustmentItems.put(itemToReturn.getTaxableItem().getId(), itemToReturn.getAdjustmentItems());
             }
 
-            final List<VertexResponsesRecord> responsesForInvoice = dao.getSuccessfulResponses(invoice.getId(), tenantContext.getTenantId());
+            final List<VertexResponsesRecord> responsesForInvoice = dao.getSuccessfulResponses(invoice.getId(), callContext.getTenantId());
             final String originalInvoiceReferenceCode = responsesForInvoice.isEmpty() ? null : responsesForInvoice.get(0).getKbInvoiceId();
 
             newInvoiceItemsBuilder.addAll(getTax(account,
@@ -170,7 +177,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                  originalInvoiceReferenceCode,
                                                  dryRun,
                                                  pluginProperties,
-                                                 tenantContext.getTenantId()));
+                                                 callContext));
         }
         return newInvoiceItemsBuilder.build();
     }
@@ -183,7 +190,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                          @Nullable final String originalInvoiceReferenceCode,
                                          final boolean dryRun,
                                          final Iterable<PluginProperty> pluginProperties,
-                                         final UUID kbTenantId) throws Exception {
+                                         final CallContext callContext) throws Exception {
         // Keep track of the invoice items and adjustments we've already taxed
         final Map<UUID, Iterable<InvoiceItem>> kbInvoiceItems = new HashMap<>();
         if (adjustmentItems != null) {
@@ -203,7 +210,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                  originalInvoiceReferenceCode,
                                  dryRun,
                                  pluginProperties,
-                                 kbTenantId,
+                                 callContext,
                                  kbInvoiceItems,
                                  taxItemsDate);
     }
@@ -216,10 +223,10 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                                       @Nullable final String originalInvoiceReferenceCode,
                                                       final boolean dryRun,
                                                       final Iterable<PluginProperty> pluginProperties,
-                                                      final UUID kbTenantId,
+                                                      final CallContext callContext,
                                                       final Map<UUID, Iterable<InvoiceItem>> kbInvoiceItems,
                                                       final LocalDate taxItemsDate) throws ApiException, SQLException {
-        final VertexApiClient vertexApiClient = vertexApiConfigurationHandler.getConfigurable(kbTenantId);
+        final VertexApiClient vertexApiClient = vertexApiConfigurationHandler.getConfigurable(callContext.getTenantId());
 
         final SaleRequestType taxRequest = toTaxRequest(account,
                                                         invoice,
@@ -241,8 +248,18 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         try {
             final ApiSuccessResponseTransactionResponseType taxResult = vertexApiClient.calculateTaxes(taxRequest);
             logger.info("CreateTransaction res: {}", taxResult);
-            if (!dryRun) {
-                dao.addResponse(account.getId(), newInvoice.getId(), kbInvoiceItems, taxResult, clock.getUTCNow(), kbTenantId);
+
+            if (taxResult.getData() != null) {
+                final VertexResponseDataExtractor vertexResponseDataExtractor = new VertexResponseDataExtractor(taxResult.getData());
+
+                if (!dryRun) {
+                    dao.addResponse(account.getId(), newInvoice.getId(), kbInvoiceItems, vertexResponseDataExtractor, clock.getUTCNow(), callContext.getTenantId());
+                }
+
+                if (!vertexApiClient.isSkipInvoiceTaxRateCalculation()) {
+                    final BigDecimal invoiceTaxRate = vertexResponseDataExtractor.calculateInvoiceTaxRate();
+                    storeInvoiceTaxRateInKBCustomField(invoiceTaxRate, invoice.getId(), callContext);
+                }
             }
 
             if (taxResult.getData() == null || taxResult.getData().getLineItems() == null ||
@@ -272,10 +289,24 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             return invoiceItems;
         } catch (final ApiException e) {
             if (e.getResponseBody() != null) {
-                dao.addResponse(account.getId(), invoice.getId(), kbInvoiceItems, e.getResponseBody(), clock.getUTCNow(), kbTenantId);
+                dao.addResponse(account.getId(), invoice.getId(), kbInvoiceItems, e.getResponseBody(), clock.getUTCNow(), callContext.getTenantId());
                 logger.warn("CreateTransaction res: {}", e.getResponseBody());
             }
             throw e;
+        }
+    }
+
+    private void storeInvoiceTaxRateInKBCustomField(final BigDecimal invoiceTaxRate, final UUID invoiceId, final CallContext callContext) {
+
+        final ImmutableList<CustomField> taxRateCustomFields = ImmutableList.of(new PluginCustomField(invoiceId,
+                                                                                                      ObjectType.INVOICE,
+                                                                                                      "invoiceTaxRate",
+                                                                                                      invoiceTaxRate.toString(),
+                                                                                                      clock.getUTCNow()));
+        try { //todo - check if update creates the field if it was not created
+            osgiKillbillAPI.getCustomFieldUserApi().updateCustomFields(taxRateCustomFields, callContext);
+        } catch (final CustomFieldApiException e) {
+            logger.error("Could not save tax rate for invoice {}, error: {}", invoiceId, e.getMessage());
         }
     }
 

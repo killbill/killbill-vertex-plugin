@@ -35,6 +35,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_ADJUSTMENTS_LENIENT_MODE_PROPERTY;
+import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_SKIP_INVOICE_TAX_RATE_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_ID_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_CLIENT_SECRET_PROPERTY;
 import static org.killbill.billing.plugin.vertex.VertexConfigProperties.VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY;
@@ -53,6 +54,7 @@ public class VertexApiClient {
     private final String companyName;
     private final String companyDivision;
     private final boolean skipAnomalousAdjustments;
+    private final boolean skipInvoiceTaxRateCalculation;
 
     public VertexApiClient(final Properties properties) {
         final String url = properties.getProperty(VERTEX_OSERIES_URL_PROPERTY);
@@ -62,6 +64,7 @@ public class VertexApiClient {
         this.companyName = properties.getProperty(VERTEX_OSERIES_COMPANY_NAME_PROPERTY);
         this.companyDivision = properties.getProperty(VERTEX_OSERIES_COMPANY_DIVISION_PROPERTY);
         this.skipAnomalousAdjustments = Boolean.parseBoolean(properties.getProperty(VERTEX_ADJUSTMENTS_LENIENT_MODE_PROPERTY));
+        this.skipInvoiceTaxRateCalculation = properties.getProperty(VERTEX_SKIP_INVOICE_TAX_RATE_PROPERTY) != null && Boolean.parseBoolean(properties.getProperty(VERTEX_SKIP_INVOICE_TAX_RATE_PROPERTY));
 
         final ApiClient apiClient = initApiClient(url, clientId, clientSecret);
         this.calculateTaxApi = apiClient != null ? new CalculateTaxApi(apiClient) : null;
@@ -79,6 +82,10 @@ public class VertexApiClient {
 
     public boolean shouldSkipAnomalousAdjustments() {
         return this.skipAnomalousAdjustments;
+    }
+
+    public boolean isSkipInvoiceTaxRateCalculation() {
+        return this.skipInvoiceTaxRateCalculation;
     }
 
     public ApiSuccessResponseTransactionResponseType calculateTaxes(SaleRequestType taxRequest) throws ApiException {

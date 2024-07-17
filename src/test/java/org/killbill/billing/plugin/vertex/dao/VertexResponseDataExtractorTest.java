@@ -47,6 +47,86 @@ import static org.testng.Assert.assertNull;
 public class VertexResponseDataExtractorTest {
 
     @Test(groups = "fast")
+    public void testInvoiceTaxRate() {
+        //given
+        //total taxes = 0.146755
+        //total taxable = 0.98
+        //invoice level tax rate
+        final Double taxable1 = 0.97d;
+        final Double taxable2 = 0.01d;
+
+        //Tax lines 1, sum of precise taxes = 0.1452575
+        final Double calculatedTax1_1 = 0.10d;
+        final Double effectiveRate1_1 = 0.09975;
+        final Double preciseTax1_1 = taxable1 * effectiveRate1_1;
+
+        final Double calculatedTax1_2 = 0.04d; //precise 0.0388
+        final Double effectiveRate1_2 = 0.04;
+        final Double preciseTax1_2 = taxable1 * effectiveRate1_2;
+
+        final Double calculatedTax1_3 = 0.01d; //precise 0.0097
+        final Double effectiveRate1_3 = 0.01d;
+        final Double preciseTax1_3 = taxable1 * effectiveRate1_3;
+
+        //Tax lines 1, sum of precise taxes = 0.0014975
+        final Double calculatedTax2_1 = 0d; //precise 0.0009975
+        final Double effectiveRate2_1 = 0.09975;
+        final Double preciseTax2_1 = taxable2 * effectiveRate2_1;
+
+        final Double calculatedTax2_2 = 0d; //precise 0.0004
+        final Double effectiveRate2_2 = 0.04;
+        final Double preciseTax2_2 = taxable2 * effectiveRate2_2;
+
+        final Double calculatedTax2_3 = 0d; //precise 0.0001
+        final Double effectiveRate2_3 = 0.01d;
+        final Double preciseTax2_3 = taxable2 * effectiveRate2_3;
+        //sum = 0.146755
+
+        final TaxesType tax1_1 = new TaxesType().calculatedTax(calculatedTax1_1)
+                                                .effectiveRate(effectiveRate1_1).taxable(taxable1);
+
+        final TaxesType tax1_2 = new TaxesType().calculatedTax(calculatedTax1_2)
+                                                .effectiveRate(effectiveRate1_2).taxable(taxable1);
+
+        final TaxesType tax1_3 = new TaxesType().calculatedTax(calculatedTax1_3)
+                                                .effectiveRate(effectiveRate1_3).taxable(taxable1);
+
+        final TaxesType tax2_1 = new TaxesType().calculatedTax(calculatedTax2_1)
+                                                .effectiveRate(effectiveRate2_1).taxable(taxable2);
+        final TaxesType tax2_2 = new TaxesType().calculatedTax(calculatedTax2_2)
+                                                .effectiveRate(effectiveRate2_2).taxable(taxable2);
+        final TaxesType tax2_3 = new TaxesType().calculatedTax(calculatedTax2_3)
+                                                .effectiveRate(effectiveRate2_3).taxable(taxable2);
+
+        final OwnerResponseLineItemType line1 = new OwnerResponseLineItemType();
+        line1.setTaxes(Arrays.asList(tax1_1, tax1_2, tax1_3));
+        final OwnerResponseLineItemType line2 = new OwnerResponseLineItemType();
+        line2.setTaxes(Arrays.asList(tax2_1, tax2_2, tax2_3));
+
+        final ApiSuccessResponseTransactionResponseTypeData vertexResponse = new ApiSuccessResponseTransactionResponseTypeData().lineItems(Arrays.asList(line1, line2));
+
+        final VertexResponseDataExtractor vertexResponseExtractor = new VertexResponseDataExtractor(vertexResponse);
+
+        final BigDecimal expectedInvoiceTaxRate = BigDecimal.valueOf(
+                (preciseTax1_1 + preciseTax1_2 + preciseTax1_3 + preciseTax2_1 + preciseTax2_2 + preciseTax2_3)
+                / (taxable1 + taxable2));
+
+        final BigDecimal expectedTotalTaxable = BigDecimal.valueOf(taxable1 + taxable2);
+
+        //when&then
+        assertEquals(vertexResponseExtractor.calculateInvoiceTaxRate(), expectedInvoiceTaxRate);
+        assertEquals(vertexResponseExtractor.getTotalTaxable(), expectedTotalTaxable);
+    }
+
+    @Test(groups = "fast")
+    public void testInvoiceTaxRateWhenNoTaxes() {
+        final VertexResponseDataExtractor vertexResponseExtractor = new VertexResponseDataExtractor(
+                new ApiSuccessResponseTransactionResponseTypeData().lineItems(null));
+
+        assertEquals(vertexResponseExtractor.calculateInvoiceTaxRate(), BigDecimal.ZERO);
+    }
+
+    @Test(groups = "fast")
     public void testGetTransactionSummary() {
         //given
         final Double exempt1 = 50d;

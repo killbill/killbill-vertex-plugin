@@ -18,6 +18,7 @@
 package org.killbill.billing.plugin.vertex.dao;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -162,6 +163,35 @@ public class VertexResponseDataExtractor {
 
     public VertexResponseDataExtractor(final ApiSuccessResponseTransactionResponseTypeData vertexResponseData) {
         this.vertexResponseData = vertexResponseData;
+    }
+
+    public BigDecimal calculateInvoiceTaxRate() {
+        final BigDecimal totalTaxableAmount = getTotalTaxable();
+        if(BigDecimal.ZERO.equals(totalTaxableAmount)) {
+            return BigDecimal.ZERO;
+        }
+
+        final BigDecimal preciseTotalAmountOfTaxes = getPreciseTotalTax();
+
+        return preciseTotalAmountOfTaxes.divide(totalTaxableAmount, 5, RoundingMode.UP);
+    }
+
+    private BigDecimal getPreciseTotalTax() {
+        final List<OwnerResponseLineItemType> lineItems = vertexResponseData.getLineItems();
+        return lineItems != null
+               ? lineItems.stream()
+                          .filter(Objects::nonNull)
+                          .filter(lineItem -> lineItem.getTaxes() != null)
+                          .flatMap(lineItem -> lineItem.getTaxes().stream())
+                          .map(tax ->
+                               {
+                                   final boolean canUseEffectiveRate = tax.getEffectiveRate() != null && tax.getTaxable() != null;
+                                   return canUseEffectiveRate ? BigDecimal.valueOf(tax.getEffectiveRate()).multiply(BigDecimal.valueOf(tax.getTaxable()))
+                                                              : tax.getCalculatedTax() != null ? BigDecimal.valueOf(tax.getCalculatedTax()) : null;
+                               })
+                          .filter(Objects::nonNull)
+                          .reduce(BigDecimal.ZERO, BigDecimal::add)
+               : BigDecimal.ZERO;
     }
 
     List<TaxInfo> getTaxSummary() {

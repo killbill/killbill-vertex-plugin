@@ -24,7 +24,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -35,7 +34,6 @@ import org.joda.time.DateTime;
 import org.jooq.impl.DSL;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.plugin.dao.PluginDao;
-import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,15 +63,13 @@ public class VertexDao extends PluginDao {
     public void addResponse(final UUID kbAccountId,
                             final UUID kbInvoiceId,
                             final Map<UUID, Iterable<InvoiceItem>> kbInvoiceItems,
-                            final ApiSuccessResponseTransactionResponseType taxResult,
+                            final VertexResponseDataExtractor vertexResponseDataExtractor,
                             final DateTime utcNow,
                             final UUID kbTenantId) throws SQLException {
 
-        if (Objects.isNull(taxResult.getData())) {
+        if (vertexResponseDataExtractor == null) {
             return;
         }
-
-        final VertexResponseDataExtractor vertexResponseDataExtractor = new VertexResponseDataExtractor(taxResult.getData());
 
         execute(dataSource.getConnection(),
                 (WithConnectionCallback<Void>) conn -> {
