@@ -38,6 +38,8 @@ import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
+import org.killbill.billing.plugin.api.invoice.PluginInvoiceItem;
+import org.killbill.billing.plugin.api.invoice.PluginInvoiceItem.Builder;
 import org.killbill.billing.plugin.api.invoice.PluginTaxCalculator;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
@@ -298,7 +300,37 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                 final BigDecimal calculatedTax = transactionLineDetailModel.getCalculatedTax() != null ? BigDecimal.valueOf(transactionLineDetailModel.getCalculatedTax()) : null;
                 final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, calculatedTax, description);
                 if (taxItem != null) {
-                    invoiceItems.add(taxItem);
+                    final InvoiceItem taxItemDerived = new PluginInvoiceItem(new Builder<>()
+                                                                                     .withId(taxItem.getId())
+                                                                                     .withInvoiceItemType(taxItem.getInvoiceItemType())
+                                                                                     .withInvoiceId(taxItem.getInvoiceId())
+                                                                                     .withAccountId(taxItem.getAccountId())
+                                                                                     .withChildAccountId(taxItem.getChildAccountId())
+                                                                                     .withStartDate(taxItem.getStartDate())
+                                                                                     .withEndDate(taxItem.getEndDate())
+                                                                                     .withAmount(taxItem.getAmount())
+                                                                                     .withCurrency(taxItem.getCurrency())
+                                                                                     .withDescription(taxItem.getDescription())
+                                                                                     .withSubscriptionId(taxItem.getSubscriptionId())
+                                                                                     .withBundleId(taxItem.getBundleId())
+                                                                                     .withCatalogEffectiveDate(taxItem.getCatalogEffectiveDate())
+                                                                                     .withProductName(taxItem.getProductName())
+                                                                                     .withPrettyProductName(taxItem.getPrettyProductName())
+                                                                                     .withPlanName(taxItem.getPlanName())
+                                                                                     .withPrettyPlanName(taxItem.getPrettyPlanName())
+                                                                                     .withPhaseName(taxItem.getPhaseName())
+                                                                                     .withPrettyPhaseName(taxItem.getPrettyPhaseName())
+                                                                                     .withRate(taxItem.getRate())
+                                                                                     .withLinkedItemId(taxItem.getLinkedItemId())
+                                                                                     .withUsageName(taxItem.getUsageName())
+                                                                                     .withPrettyUsageName(taxItem.getPrettyUsageName())
+                                                                                     .withQuantity(taxItem.getQuantity())
+                                                                                     .withItemDetails("gelatic fussion")
+                                                                                     .withCreatedDate(taxItem.getCreatedDate())
+                                                                                     .withUpdatedDate(taxItem.getUpdatedDate())
+                                                                                     .validate().build()
+                    );
+                    invoiceItems.add(taxItemDerived);
                 }
             }
             return invoiceItems;
