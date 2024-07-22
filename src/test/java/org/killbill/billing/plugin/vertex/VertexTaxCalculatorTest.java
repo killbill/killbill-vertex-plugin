@@ -58,6 +58,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertNull;
 
 public class VertexTaxCalculatorTest {
 
@@ -157,7 +158,6 @@ public class VertexTaxCalculatorTest {
         //given
         given(taxResponse.getData()).willReturn(apiResponseData);
         given(invoice.getInvoiceItems()).willReturn(Collections.singletonList(taxableInvoiceItem));
-
         final boolean isDryRun = false;
 
         //when
@@ -229,6 +229,40 @@ public class VertexTaxCalculatorTest {
         given(responseLineItem.getTaxes()).willReturn(Collections.singletonList(taxesType));
         result = vertexTaxCalculator.compute(account, invoice, isDryRun, Collections.emptyList(), tenantContext);
         assertEquals("CA STATE TAX", result.get(0).getDescription());
+    }
+
+    @Test(groups = "fast")
+    public void testTaxEffectiveRate() throws Exception {
+        //given
+        given(invoice.getInvoiceItems()).willReturn(Collections.singletonList(taxableInvoiceItem));
+        given(taxResponse.getData()).willReturn(apiResponseData);
+        final TaxesType taxesType = new TaxesType();
+        taxesType.setCalculatedTax(MOCK_TAX_AMOUNT_1_01);
+        given(responseLineItem.getTaxes()).willReturn(Collections.singletonList(taxesType));
+
+        //given tax effective rate is present
+        taxesType.setEffectiveRate(0.09975d);
+
+        //then it persisted in item details invoice item field
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+        assertEquals("0.09975", result.get(0).getItemDetails());
+        checkTaxItemFields(result.get(0));
+
+        //given effective rate is not present
+        taxesType.setEffectiveRate(null);
+
+        //then no item details persisted
+        result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+        assertNull(result.get(0).getItemDetails());
+        checkTaxItemFields(result.get(0));
+    }
+
+    private void checkTaxItemFields(final InvoiceItem taxItem) {
+        assertEquals(InvoiceItemType.TAX, taxItem.getInvoiceItemType());
+        assertEquals("Tax", taxItem.getDescription());
+        assertEquals(INVOICE_ID, taxItem.getInvoiceId());
+        assertEquals(INVOICE_DATE, taxItem.getStartDate());
+        assertEquals(INVOICE_DATE.plusMonths(1), taxItem.getEndDate());
     }
 
     @Test(groups = "fast", expectedExceptions = {IllegalStateException.class})
