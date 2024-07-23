@@ -67,13 +67,10 @@ import org.killbill.clock.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 
 public class VertexTaxCalculator extends PluginTaxCalculator {
@@ -105,7 +102,6 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
     private final VertexDao dao;
     private final Clock clock;
-    private final ObjectMapper objectMapper;
 
     public VertexTaxCalculator(final VertexApiConfigurationHandler vertexApiConfigurationHandler,
                                final VertexDao dao,
@@ -115,7 +111,6 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         this.vertexApiConfigurationHandler = vertexApiConfigurationHandler;
         this.clock = clock;
         this.dao = dao;
-        this.objectMapper = new ObjectMapper();
     }
 
     public List<InvoiceItem> compute(final Account account,
@@ -319,11 +314,6 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             return taxItem;
         }
 
-        final String taxItemDetails = createTaxItemDetails(taxRate);
-        if (taxItemDetails == null) {
-            return taxItem;
-        }
-
         return new PluginInvoiceItem(new Builder<>()
                                              .withId(taxItem.getId())
                                              .withInvoiceItemType(taxItem.getInvoiceItemType())
@@ -349,18 +339,14 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                              .withUsageName(taxItem.getUsageName())
                                              .withPrettyUsageName(taxItem.getPrettyUsageName())
                                              .withQuantity(taxItem.getQuantity())
-                                             .withItemDetails(taxItemDetails)
+                                             .withItemDetails(createTaxItemDetails(taxRate))
                                              .withCreatedDate(taxItem.getCreatedDate())
                                              .withUpdatedDate(taxItem.getUpdatedDate())
                                              .validate().build());
     }
 
     private String createTaxItemDetails(@Nonnull final Double effectiveRate) {
-        try {
-            return objectMapper.writeValueAsString(ImmutableMap.of("taxRate", String.valueOf(effectiveRate)));
-        } catch (JsonProcessingException ignored) {
-            return null;
-        }
+        return "{\"taxRate\":\"" + effectiveRate + "\"}";
     }
 
     private String getTaxDescription(final TaxesType transactionLineDetailModel) {
