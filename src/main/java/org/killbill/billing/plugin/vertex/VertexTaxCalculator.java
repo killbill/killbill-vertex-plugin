@@ -319,7 +319,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             return taxItem;
         }
 
-        final String taxItemDetails = createTaxItemDetails(taxRate);
+        final String taxItemDetails = createTaxItemDetails(ImmutableMap.of("taxRate", String.valueOf(taxRate)));
         if (taxItemDetails == null) {
             return taxItem;
         }
@@ -355,9 +355,9 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                              .validate().build());
     }
 
-    private String createTaxItemDetails(@Nonnull final Double effectiveRate) {
+    private String createTaxItemDetails(@Nonnull final Map<String, String> taxItemDetails) {
         try {
-            return objectMapper.writeValueAsString(ImmutableMap.of("taxRate", String.valueOf(effectiveRate)));
+            return objectMapper.writeValueAsString(taxItemDetails);
         } catch (JsonProcessingException ignored) {
             return null;
         }
