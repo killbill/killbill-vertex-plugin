@@ -245,7 +245,7 @@ public class VertexTaxCalculatorTest {
 
         //then it persisted in item details invoice item field
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
-        assertEquals("{\"taxRate\":\"0.09975\"}", result.get(0).getItemDetails());
+        assertEquals("{\"taxRate\":0.09975}", result.get(0).getItemDetails());
         checkTaxItemFields(result.get(0));
 
         //given effective rate is not present
@@ -308,7 +308,7 @@ public class VertexTaxCalculatorTest {
         //then it persisted in item details invoice item field
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
         assertEquals(1, result.size());
-        assertEquals("{\"taxRate\":\"0.0\"}", result.get(0).getItemDetails());
+        assertEquals("{\"taxRate\":0.0}", result.get(0).getItemDetails());
         checkTaxItemFields(result.get(0));
     }
 
