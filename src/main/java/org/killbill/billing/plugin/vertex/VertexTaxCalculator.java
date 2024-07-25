@@ -321,6 +321,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         }
 
         if (taxRate == null) {
+            logger.info("The tax rate is not provided in the Vertex response for the tax item with ID: {} and calculated tax: {}", taxItem.getId(), calculatedTax);
             taxRate = calculatedTax.divide(taxableItem.getAmount(), 5, RoundingMode.HALF_UP).doubleValue();
         }
 
@@ -363,7 +364,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     private String createTaxItemDetails(@Nonnull final Map<String, Object> taxItemDetails) {
         try {
             return objectMapper.writeValueAsString(taxItemDetails);
-        } catch (JsonProcessingException ignored) {
+        } catch (JsonProcessingException exception) {
+            logger.error("Couldn't serialize the tax item details: {}", taxItemDetails, exception);
             return null;
         }
     }
