@@ -58,7 +58,6 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertNull;
 
 public class VertexTaxCalculatorTest {
 
@@ -247,50 +246,28 @@ public class VertexTaxCalculatorTest {
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
         assertEquals("{\"taxRate\":0.09975}", result.get(0).getItemDetails());
         checkTaxItemFields(result.get(0));
-
-        //given effective rate is not present
-        taxesType.setEffectiveRate(null);
-
-        //then no item details persisted
-        result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
-        assertNull(result.get(0).getItemDetails());
-        checkTaxItemFields(result.get(0));
     }
 
     @Test(groups = "fast")
-    public void testComputeWhenTaxEffectiveRateIsNotPresented() throws Exception {
+    public void testComputeWhenTaxEffectiveRateIsNotPresentedByVertex() throws Exception {
         //given
         given(invoice.getInvoiceItems()).willReturn(Collections.singletonList(taxableInvoiceItem));
+        final BigDecimal taxableAmount = BigDecimal.valueOf(0.97d);
+        given(taxableInvoiceItem.getAmount()).willReturn(taxableAmount);
         given(taxResponse.getData()).willReturn(apiResponseData);
+
+        final BigDecimal expectedTaxRate = BigDecimal.valueOf(0.09975);
         final TaxesType taxesType = new TaxesType();
-        taxesType.setCalculatedTax(MOCK_TAX_AMOUNT_1_01);
+        taxesType.setCalculatedTax(taxableAmount.multiply(expectedTaxRate).doubleValue());
         given(responseLineItem.getTaxes()).willReturn(Collections.singletonList(taxesType));
 
-        //given tax effective rate is not present
         taxesType.setEffectiveRate(null);
 
-        //then it persisted in item details invoice item field
+        //tax rate is calculated and provided in item details in the result
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
         assertEquals(1, result.size());
-        assertNull(result.get(0).getItemDetails());
+        assertEquals("{\"taxRate\":" + expectedTaxRate + "}", result.get(0).getItemDetails());
         checkTaxItemFields(result.get(0));
-    }
-
-    @Test(groups = "fast")
-    public void testComputeWhenEffectiveTaxRateZero() throws Exception {
-        //given
-        given(invoice.getInvoiceItems()).willReturn(Collections.singletonList(taxableInvoiceItem));
-        given(taxResponse.getData()).willReturn(apiResponseData);
-        final TaxesType taxesType = new TaxesType();
-        taxesType.setCalculatedTax(0d);
-        given(responseLineItem.getTaxes()).willReturn(Collections.singletonList(taxesType));
-
-        //given tax effective rate is present
-        taxesType.setEffectiveRate(0d);
-
-        //then it persisted in item details invoice item field
-        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
-        assertEquals(0, result.size());
     }
 
     @Test(groups = "fast")
@@ -302,10 +279,9 @@ public class VertexTaxCalculatorTest {
         taxesType.setCalculatedTax(MOCK_TAX_AMOUNT_1_01);
         given(responseLineItem.getTaxes()).willReturn(Collections.singletonList(taxesType));
 
-        //given tax effective rate is present
         taxesType.setEffectiveRate(0d);
 
-        //then it persisted in item details invoice item field
+        //tax item with tax rate in item details is added to the result
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
         assertEquals(1, result.size());
         assertEquals("{\"taxRate\":0.0}", result.get(0).getItemDetails());

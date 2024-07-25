@@ -18,6 +18,7 @@
 package org.killbill.billing.plugin.vertex;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -315,8 +316,12 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
     private InvoiceItem createTaxInvoiceItem(final InvoiceItem taxableItem, final UUID invoiceId, @Nullable final InvoiceItem adjustmentItem, final BigDecimal calculatedTax, @Nullable final String description, @Nullable Double taxRate) {
         final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, calculatedTax, description);
-        if (taxItem == null || taxRate == null) {
-            return taxItem;
+        if (taxItem == null) {
+            return null;
+        }
+
+        if (taxRate == null) {
+            taxRate = calculatedTax.divide(taxableItem.getAmount(), 5, RoundingMode.HALF_UP).doubleValue();
         }
 
         final String taxItemDetails = createTaxItemDetails(ImmutableMap.of("taxRate", taxRate));
