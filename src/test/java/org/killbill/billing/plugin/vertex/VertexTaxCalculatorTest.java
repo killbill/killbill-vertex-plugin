@@ -92,13 +92,22 @@ public class VertexTaxCalculatorTest {
     private InvoiceItem taxableInvoiceItem;
     @Mock
     private InvoiceItem adjustment;
+    @Mock
+    private TaxesType taxesType;
 
     @InjectMocks
     private VertexTaxCalculator vertexTaxCalculator;
 
     @BeforeClass(groups = "fast")
-    public void setUp() throws Exception {
+    public void beforeClass() {
         MockitoAnnotations.openMocks(this);
+    }
+
+    @BeforeMethod(groups = "fast")
+    public void beforeMethod() throws Exception {
+
+        Mockito.clearInvocations(vertexDao);
+        Mockito.clearInvocations(vertexApiClient);
 
         given(vertexApiConfigurationHandler.getConfigurable(any(UUID.class))).willReturn(vertexApiClient);
         given(tenantContext.getTenantId()).willReturn(UUID.randomUUID());
@@ -106,7 +115,9 @@ public class VertexTaxCalculatorTest {
         given(invoice.getInvoiceDate()).willReturn(INVOICE_DATE);
         given(invoice.getCurrency()).willReturn(Currency.USD);
         given(account.getExternalKey()).willReturn("externalKey");
+        given(invoice.getInvoiceItems()).willReturn(Collections.singletonList(taxableInvoiceItem));
         given(clock.getUTCNow()).willReturn(new DateTime(DateTimeZone.UTC));
+
         given(account.getId()).willReturn(UUID.randomUUID());
 
         given(taxableInvoiceItem.getAmount()).willReturn(new BigDecimal(1));
@@ -125,10 +136,15 @@ public class VertexTaxCalculatorTest {
         given(adjustment.getEndDate()).willReturn(INVOICE_DATE.plusMonths(1));
 
         given(vertexDao.getSuccessfulResponses(any(UUID.class), any(UUID.class))).willReturn(Collections.emptyList());
-        given(vertexApiClient.calculateTaxes(any(SaleRequestType.class))).willReturn(taxResponse);
+
+        given(responseLineItem.getTaxes()).willReturn(Collections.singletonList(taxesType));
+        given(taxesType.getCalculatedTax()).willReturn(MOCK_TAX_AMOUNT_1_01);
 
         given(responseLineItem.getLineItemId()).willReturn(TAX_ITEM_ID.toString());
         given(responseLineItem.getTotalTax()).willReturn(MOCK_TAX_AMOUNT_1_01);
+
+        given(vertexApiClient.calculateTaxes(any(SaleRequestType.class))).willReturn(taxResponse);
+        given(taxResponse.getData()).willReturn(apiResponseData);
         given(apiResponseData.getLineItems()).willReturn(Collections.singletonList(responseLineItem));
     }
 
@@ -155,9 +171,6 @@ public class VertexTaxCalculatorTest {
     @Test(groups = "fast")
     public void testCompute() throws Exception {
         //given
-        given(taxResponse.getData()).willReturn(apiResponseData);
-        given(invoice.getInvoiceItems()).willReturn(Collections.singletonList(taxableInvoiceItem));
-
         final boolean isDryRun = false;
 
         //when
@@ -181,8 +194,6 @@ public class VertexTaxCalculatorTest {
     @Test(groups = "fast")
     public void testComputeDryRun() throws Exception {
         //given
-        given(taxResponse.getData()).willReturn(apiResponseData);
-        given(invoice.getInvoiceItems()).willReturn(Collections.singletonList(taxableInvoiceItem));
         final boolean isDryRun = true;
 
         //when
@@ -198,8 +209,6 @@ public class VertexTaxCalculatorTest {
     public void testTaxDescription() throws Exception {
         //given
         final boolean isDryRun = false;
-        given(invoice.getInvoiceItems()).willReturn(Collections.singletonList(taxableInvoiceItem));
-        given(taxResponse.getData()).willReturn(apiResponseData);
         given(responseLineItem.getTaxes()).willReturn(null);
 
         String expectedTaxDescription = "Tax"; //The case when taxes retrieved from total tax field (taxes object is missing in line item)
@@ -231,11 +240,65 @@ public class VertexTaxCalculatorTest {
         assertEquals("CA STATE TAX", result.get(0).getDescription());
     }
 
+    @Test(groups = "fast")
+    public void testTaxEffectiveRate() throws Exception {
+        //given
+        given(taxesType.getEffectiveRate()).willReturn(0.09975d);
+
+        //then it persisted in item details invoice item field
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+        assertEquals("{\"taxRate\":0.09975}", result.get(0).getItemDetails());
+        checkTaxItemFields(result.get(0));
+    }
+
+    @Test(groups = "fast")
+    public void testComputeWhenTaxEffectiveRateIsNotPresentedByVertex() throws Exception {
+        //given
+        final BigDecimal taxableAmount = BigDecimal.valueOf(0.97d);
+        given(taxableInvoiceItem.getAmount()).willReturn(taxableAmount);
+
+        final BigDecimal expectedTaxRate = BigDecimal.valueOf(0.09975);
+        final TaxesType taxesType = new TaxesType();
+        taxesType.setCalculatedTax(taxableAmount.multiply(expectedTaxRate).doubleValue());
+        given(responseLineItem.getTaxes()).willReturn(Collections.singletonList(taxesType));
+
+        taxesType.setEffectiveRate(null);
+
+        //when tax rate is calculated and provided in item details in the result
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+
+        //then
+        assertEquals(1, result.size());
+        assertEquals("{\"taxRate\":" + expectedTaxRate + "}", result.get(0).getItemDetails());
+        checkTaxItemFields(result.get(0));
+    }
+
+    @Test(groups = "fast")
+    public void testComputeWhenEffectiveTaxRateZero() throws Exception {
+        //given
+        given(taxesType.getEffectiveRate()).willReturn(0d);
+
+        //when calculated tax amount is positive tax item with tax rate is added to the result
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+
+        //then
+        assertEquals(1, result.size());
+        assertEquals("{\"taxRate\":0.0}", result.get(0).getItemDetails());
+        checkTaxItemFields(result.get(0));
+    }
+
+    private void checkTaxItemFields(final InvoiceItem taxItem) {
+        assertEquals(InvoiceItemType.TAX, taxItem.getInvoiceItemType());
+        assertEquals("Tax", taxItem.getDescription());
+        assertEquals(INVOICE_ID, taxItem.getInvoiceId());
+        assertEquals(INVOICE_DATE, taxItem.getStartDate());
+        assertEquals(INVOICE_DATE.plusMonths(1), taxItem.getEndDate());
+    }
+
     @Test(groups = "fast", expectedExceptions = {IllegalStateException.class})
     public void testComputeWithAnomalousAdjustmentsException() throws Exception {
         //given
         given(invoice.getInvoiceItems()).willReturn(Arrays.asList(taxableInvoiceItem, adjustment));
-        given(taxResponse.getData()).willReturn(apiResponseData);
         final boolean isDryRun = false;
 
         //IllegalStateException is thrown when previous invoice id is missing for adjustments and skipAnomalousAdjustments property is not set
@@ -246,7 +309,6 @@ public class VertexTaxCalculatorTest {
     public void testComputeWithAnomalousAdjustmentsSkipIfPropertyTrue() throws Exception {
         //given
         given(invoice.getInvoiceItems()).willReturn(Arrays.asList(taxableInvoiceItem, adjustment));
-        given(taxResponse.getData()).willReturn(apiResponseData);
         final boolean isDryRun = false;
         given(vertexApiClient.shouldSkipAnomalousAdjustments()).willReturn(true); //vertex-plugin will skip adjustment items if previousInvoiceId is missing
 

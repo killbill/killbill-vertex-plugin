@@ -18,6 +18,7 @@
 package org.killbill.billing.plugin.vertex;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import org.joda.time.LocalDate;
@@ -38,6 +40,8 @@ import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
+import org.killbill.billing.plugin.api.invoice.PluginInvoiceItem;
+import org.killbill.billing.plugin.api.invoice.PluginInvoiceItem.Builder;
 import org.killbill.billing.plugin.api.invoice.PluginTaxCalculator;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
@@ -64,10 +68,13 @@ import org.killbill.clock.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 
 public class VertexTaxCalculator extends PluginTaxCalculator {
@@ -99,6 +106,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
     private final VertexDao dao;
     private final Clock clock;
+    private final ObjectMapper objectMapper;
 
     public VertexTaxCalculator(final VertexApiConfigurationHandler vertexApiConfigurationHandler,
                                final VertexDao dao,
@@ -108,6 +116,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         this.vertexApiConfigurationHandler = vertexApiConfigurationHandler;
         this.clock = clock;
         this.dao = dao;
+        this.objectMapper = new ObjectMapper();
     }
 
     public List<InvoiceItem> compute(final Account account,
@@ -296,12 +305,68 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             for (final TaxesType transactionLineDetailModel : transactionLineModel.getTaxes()) {
                 final String description = getTaxDescription(transactionLineDetailModel);
                 final BigDecimal calculatedTax = transactionLineDetailModel.getCalculatedTax() != null ? BigDecimal.valueOf(transactionLineDetailModel.getCalculatedTax()) : null;
-                final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, calculatedTax, description);
+                final InvoiceItem taxItem = createTaxInvoiceItem(taxableItem, invoiceId, adjustmentItem, calculatedTax, description, transactionLineDetailModel.getEffectiveRate());
                 if (taxItem != null) {
                     invoiceItems.add(taxItem);
                 }
             }
             return invoiceItems;
+        }
+    }
+
+    private InvoiceItem createTaxInvoiceItem(final InvoiceItem taxableItem, final UUID invoiceId, @Nullable final InvoiceItem adjustmentItem, final BigDecimal calculatedTax, @Nullable final String description, @Nullable Double taxRate) {
+        final InvoiceItem taxItem = buildTaxItem(taxableItem, invoiceId, adjustmentItem, calculatedTax, description);
+        if (taxItem == null) {
+            return null;
+        }
+
+        if (taxRate == null) {
+            logger.warn("The tax rate is not provided in the Vertex response for the tax item with ID: {} and calculated tax: {}", taxItem.getId(), calculatedTax);
+            taxRate = calculatedTax.divide(taxableItem.getAmount(), 5, RoundingMode.FLOOR).doubleValue();
+        }
+
+        final String taxItemDetails = createTaxItemDetails(ImmutableMap.of("taxRate", taxRate));
+        if (taxItemDetails == null) {
+            return taxItem;
+        }
+
+        return new PluginInvoiceItem(new Builder<>()
+                                             .withId(taxItem.getId())
+                                             .withInvoiceItemType(taxItem.getInvoiceItemType())
+                                             .withInvoiceId(taxItem.getInvoiceId())
+                                             .withAccountId(taxItem.getAccountId())
+                                             .withChildAccountId(taxItem.getChildAccountId())
+                                             .withStartDate(taxItem.getStartDate())
+                                             .withEndDate(taxItem.getEndDate())
+                                             .withAmount(taxItem.getAmount())
+                                             .withCurrency(taxItem.getCurrency())
+                                             .withDescription(taxItem.getDescription())
+                                             .withSubscriptionId(taxItem.getSubscriptionId())
+                                             .withBundleId(taxItem.getBundleId())
+                                             .withCatalogEffectiveDate(taxItem.getCatalogEffectiveDate())
+                                             .withProductName(taxItem.getProductName())
+                                             .withPrettyProductName(taxItem.getPrettyProductName())
+                                             .withPlanName(taxItem.getPlanName())
+                                             .withPrettyPlanName(taxItem.getPrettyPlanName())
+                                             .withPhaseName(taxItem.getPhaseName())
+                                             .withPrettyPhaseName(taxItem.getPrettyPhaseName())
+                                             .withRate(taxItem.getRate())
+                                             .withLinkedItemId(taxItem.getLinkedItemId())
+                                             .withUsageName(taxItem.getUsageName())
+                                             .withPrettyUsageName(taxItem.getPrettyUsageName())
+                                             .withQuantity(taxItem.getQuantity())
+                                             .withItemDetails(taxItemDetails)
+                                             .withCreatedDate(taxItem.getCreatedDate())
+                                             .withUpdatedDate(taxItem.getUpdatedDate())
+                                             .validate().build());
+    }
+
+    private String createTaxItemDetails(@Nonnull final Map<String, Object> taxItemDetails) {
+        try {
+            return objectMapper.writeValueAsString(taxItemDetails);
+        } catch (JsonProcessingException exception) {
+            logger.error("Couldn't serialize the tax item details: {}", taxItemDetails, exception);
+            return null;
         }
     }
 
