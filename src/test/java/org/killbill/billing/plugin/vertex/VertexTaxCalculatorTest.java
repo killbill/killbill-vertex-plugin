@@ -142,7 +142,6 @@ public class VertexTaxCalculatorTest {
 
         given(responseLineItem.getLineItemId()).willReturn(TAX_ITEM_ID.toString());
         given(responseLineItem.getTotalTax()).willReturn(MOCK_TAX_AMOUNT_1_01);
-        given(responseLineItem.getTotalTax()).willReturn(MOCK_TAX_AMOUNT_1_01);
 
         given(vertexApiClient.calculateTaxes(any(SaleRequestType.class))).willReturn(taxResponse);
         given(taxResponse.getData()).willReturn(apiResponseData);
