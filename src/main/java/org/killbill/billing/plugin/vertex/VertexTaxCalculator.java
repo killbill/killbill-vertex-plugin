@@ -322,7 +322,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
         if (taxRate == null) {
             logger.warn("The tax rate is not provided in the Vertex response for the tax item with ID: {} and calculated tax: {}", taxItem.getId(), calculatedTax);
-            taxRate = calculatedTax.divide(taxableItem.getAmount(), 5, RoundingMode.HALF_DOWN).doubleValue();
+            taxRate = calculatedTax.divide(taxableItem.getAmount(), 5, RoundingMode.FLOOR).doubleValue();
         }
 
         final String taxItemDetails = createTaxItemDetails(ImmutableMap.of("taxRate", taxRate));
