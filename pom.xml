@@ -41,6 +41,7 @@
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
         <jooq.version>3.14.15</jooq.version>
+        <killbill.version>0.22.32</killbill.version>
         <osgi.private>org.killbill.billing.plugin.vertex.*</osgi.private>
     </properties>
     <dependencies>
@@ -153,6 +154,11 @@
         <dependency>
             <groupId>org.kill-bill.billing</groupId>
             <artifactId>killbill-api</artifactId>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.billing</groupId>
+            <artifactId>killbill-invoice</artifactId>
             <scope>provided</scope>
         </dependency>
         <dependency>

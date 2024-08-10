@@ -37,6 +37,7 @@ import org.joda.time.LocalDate;
 import org.killbill.billing.account.api.Account;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
+import org.killbill.billing.invoice.usage.details.UsageConsumableInArrearAggregate;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
@@ -68,13 +69,14 @@ import org.killbill.clock.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 
 public class VertexTaxCalculator extends PluginTaxCalculator {
@@ -116,7 +118,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         this.vertexApiConfigurationHandler = vertexApiConfigurationHandler;
         this.clock = clock;
         this.dao = dao;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = new ObjectMapper().setSerializationInclusion(Include.NON_NULL);
     }
 
     public List<InvoiceItem> compute(final Account account,
@@ -325,7 +327,10 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             taxRate = calculatedTax.divide(taxableItem.getAmount(), 5, RoundingMode.FLOOR).doubleValue();
         }
 
-        final String taxItemDetails = createTaxItemDetails(ImmutableMap.of("taxRate", taxRate));
+        final UsageConsumableInArrearAggregate usageDetail = getUsageDetailFromItemDetails(taxItem);
+
+        final String taxItemDetails = createTaxItemDetails(new TaxItemDetails(taxRate, usageDetail));
+
         if (taxItemDetails == null) {
             return taxItem;
         }
@@ -361,7 +366,22 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                              .validate().build());
     }
 
-    private String createTaxItemDetails(@Nonnull final Map<String, Object> taxItemDetails) {
+    private UsageConsumableInArrearAggregate getUsageDetailFromItemDetails(final InvoiceItem taxItem) {
+        if (taxItem.getItemDetails() == null) {
+            return null;
+        }
+
+        UsageConsumableInArrearAggregate usageDetail = null;
+        try {
+            usageDetail = objectMapper.readValue(taxItem.getItemDetails(), new TypeReference<UsageConsumableInArrearAggregate>() {});
+        } catch (JsonProcessingException e) {
+            logger.error("Failed to parse the item details for tax item with ID: {}", taxItem.getId(), e);
+        }
+
+        return usageDetail;
+    }
+
+    private String createTaxItemDetails(@Nonnull final TaxItemDetails taxItemDetails) {
         try {
             return objectMapper.writeValueAsString(taxItemDetails);
         } catch (JsonProcessingException exception) {
