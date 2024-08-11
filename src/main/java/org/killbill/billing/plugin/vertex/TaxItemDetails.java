@@ -26,25 +26,37 @@ import javax.annotation.Nullable;
 import org.killbill.billing.invoice.usage.details.UsageConsumableInArrearAggregate;
 import org.killbill.billing.invoice.usage.details.UsageConsumableInArrearTierUnitAggregate;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
 /**
  * Wrapper to add taxRate details into itemDetails
  */
 public class TaxItemDetails {
 
-    private final UsageConsumableInArrearAggregate usageDetail;
+    private final List<UsageConsumableInArrearTierUnitAggregate> tierDetails;
+    private final BigDecimal amount;
     private final Double taxRate;
 
     public TaxItemDetails(@Nonnull final Double taxRate, @Nullable final UsageConsumableInArrearAggregate usageDetail) {
-        this.usageDetail = usageDetail;
+        this(taxRate, usageDetail != null ? usageDetail.getTierDetails() : null, usageDetail != null ? usageDetail.getAmount() : null);
+    }
+
+    @JsonCreator
+    public TaxItemDetails(@JsonProperty("taxRate") final Double taxRate,
+                          @JsonProperty("tierDetails") List<UsageConsumableInArrearTierUnitAggregate> tierDetails,
+                          @JsonProperty("amount") BigDecimal amount) {
+        this.tierDetails = tierDetails;
+        this.amount = amount;
         this.taxRate = taxRate;
     }
 
     public List<UsageConsumableInArrearTierUnitAggregate> getTierDetails() {
-        return usageDetail != null ? usageDetail.getTierDetails() : null;
+        return tierDetails;
     }
 
     public BigDecimal getAmount() {
-        return usageDetail != null ? usageDetail.getAmount() : null;
+        return amount;
     }
 
     public Double getTaxRate() {

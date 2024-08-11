@@ -31,6 +31,8 @@ import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.api.InvoiceItemType;
+import org.killbill.billing.invoice.usage.details.UsageConsumableInArrearAggregate;
+import org.killbill.billing.invoice.usage.details.UsageConsumableInArrearTierUnitAggregate;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseType;
 import org.killbill.billing.plugin.vertex.gen.client.model.ApiSuccessResponseTransactionResponseTypeData;
@@ -49,6 +51,10 @@ import org.mockito.MockitoAnnotations;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
@@ -249,6 +255,69 @@ public class VertexTaxCalculatorTest {
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
         assertEquals("{\"taxRate\":0.09975}", result.get(0).getItemDetails());
         checkTaxItemFields(result.get(0));
+    }
+
+    @Test(groups = "fast")
+    public void testTaxItemDetailsWhenUsageDetailsExists() throws Exception {
+        //given
+        final double taxRate = 0.09975d;
+        given(taxesType.getEffectiveRate()).willReturn(taxRate);
+
+        final ObjectMapper objectMapper = new ObjectMapper();
+        final int tier1 = 1;
+        final String unit1 = "hour";
+        final BigDecimal tierPrice1 = BigDecimal.valueOf(0.5);
+        final long tierBlockSize1 = 1L;
+        final long quantity1 = 1L;
+
+        final int tier2 = 2;
+        final String unit2 = "min";
+        final BigDecimal tierPrice2 = BigDecimal.valueOf(0.7);
+        final long tierBlockSize2 = 2L;
+        final long quantity2 = 2L;
+
+        final List<UsageConsumableInArrearTierUnitAggregate> usages = ImmutableList.of(
+                new UsageConsumableInArrearTierUnitAggregate(tier1, unit1, tierPrice1, tierBlockSize1, quantity1),
+                new UsageConsumableInArrearTierUnitAggregate(tier2, unit2, tierPrice2, tierBlockSize2, quantity2));
+
+        final UsageConsumableInArrearAggregate usagesAggregate = new UsageConsumableInArrearAggregate(usages);
+        final String taxableInvoiceItemDetails = objectMapper.writeValueAsString(usagesAggregate);
+
+        given(taxableInvoiceItem.getItemDetails()).willReturn(taxableInvoiceItemDetails);
+
+        final TaxItemDetails expectedTaxItemDetails = new TaxItemDetails(taxRate, usagesAggregate);
+        final String expectedTaxItemDetailsJson = objectMapper.writeValueAsString(expectedTaxItemDetails);
+
+        //when
+        final List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+
+        //then
+        final String actualItemDetailsJson = result.get(0).getItemDetails();
+        final TaxItemDetails actualItemDetails = objectMapper.readValue(actualItemDetailsJson, new TypeReference<TaxItemDetails>() {});
+
+        assertEquals(taxRate, actualItemDetails.getTaxRate());
+
+        assertEquals(usages.size(), actualItemDetails.getTierDetails().size());
+
+        final UsageConsumableInArrearTierUnitAggregate actualTierAggregate1 = actualItemDetails.getTierDetails().get(0);
+        assertEquals(tier1, actualTierAggregate1.getTier());
+        assertEquals(unit1, actualTierAggregate1.getTierUnit());
+        assertEquals(tierPrice1, actualTierAggregate1.getTierPrice());
+        assertEquals(tierBlockSize1, actualTierAggregate1.getTierBlockSize());
+        assertEquals(Long.valueOf(quantity1), actualTierAggregate1.getQuantity());
+        assertEquals(tierPrice1.multiply(BigDecimal.valueOf(quantity1)), actualTierAggregate1.getAmount());
+
+        final UsageConsumableInArrearTierUnitAggregate actualTierAggregate2 = actualItemDetails.getTierDetails().get(1);
+        assertEquals(tier2, actualTierAggregate2.getTier());
+        assertEquals(unit2, actualTierAggregate2.getTierUnit());
+        assertEquals(tierPrice2, actualTierAggregate2.getTierPrice());
+        assertEquals(tierBlockSize2, actualTierAggregate2.getTierBlockSize());
+        assertEquals(Long.valueOf(quantity2), actualTierAggregate2.getQuantity());
+        assertEquals(tierPrice2.multiply(BigDecimal.valueOf(quantity2)), actualItemDetails.getTierDetails().get(1).getAmount());
+
+        assertEquals(actualTierAggregate1.getAmount().add(actualTierAggregate2.getAmount()), actualItemDetails.getAmount());
+
+        assertEquals(expectedTaxItemDetailsJson, objectMapper.writeValueAsString(actualItemDetails));
     }
 
     @Test(groups = "fast")
