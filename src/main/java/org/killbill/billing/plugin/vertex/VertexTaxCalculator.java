@@ -37,7 +37,6 @@ import org.joda.time.LocalDate;
 import org.killbill.billing.account.api.Account;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
-import org.killbill.billing.invoice.usage.details.UsageConsumableInArrearAggregate;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
@@ -69,14 +68,15 @@ import org.killbill.clock.Clock;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.google.common.base.MoreObjects;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Multimap;
 
 public class VertexTaxCalculator extends PluginTaxCalculator {
@@ -118,7 +118,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         this.vertexApiConfigurationHandler = vertexApiConfigurationHandler;
         this.clock = clock;
         this.dao = dao;
-        this.objectMapper = new ObjectMapper().setSerializationInclusion(Include.NON_NULL);
+        this.objectMapper = new ObjectMapper();
     }
 
     public List<InvoiceItem> compute(final Account account,
@@ -327,13 +327,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             taxRate = calculatedTax.divide(taxableItem.getAmount(), 5, RoundingMode.FLOOR).doubleValue();
         }
 
-        final UsageConsumableInArrearAggregate usageDetail = getUsageDetailFromItemDetails(taxItem);
-
-        final String taxItemDetails = createTaxItemDetails(new TaxItemDetails(taxRate, usageDetail));
-
-        if (taxItemDetails == null) {
-            return taxItem;
-        }
+        final String taxItemDetails = addTaxRateToItemDetails(taxItem.getItemDetails(), taxRate);
 
         return new PluginInvoiceItem(new Builder<>()
                                              .withId(taxItem.getId())
@@ -366,26 +360,38 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                              .validate().build());
     }
 
-    private UsageConsumableInArrearAggregate getUsageDetailFromItemDetails(final InvoiceItem taxItem) {
-        if (taxItem.getItemDetails() == null) {
+    private String addTaxRateToItemDetails(@Nullable final String itemDetails, @Nonnull final Double taxRate) {
+        final ObjectNode existingItemsDetailsJson = deserializeItemDetails(itemDetails);
+
+        final Object itemDetailsWithTaxRate;
+        if (existingItemsDetailsJson != null) {
+            existingItemsDetailsJson.put("taxRate", taxRate);
+            itemDetailsWithTaxRate = existingItemsDetailsJson;
+        } else {
+            itemDetailsWithTaxRate = ImmutableMap.of("taxRate", taxRate);
+        }
+
+        try {
+            return objectMapper.writeValueAsString(itemDetailsWithTaxRate);
+        } catch (JsonProcessingException exception) {
+            logger.error("Couldn't serialize the tax item details: {}", itemDetailsWithTaxRate, exception);
+            return null;
+        }
+    }
+
+    private ObjectNode deserializeItemDetails(@Nullable final String itemDetails) {
+        if (itemDetails == null || itemDetails.isEmpty()) {
             return null;
         }
 
-        UsageConsumableInArrearAggregate usageDetail = null;
         try {
-            usageDetail = objectMapper.readValue(taxItem.getItemDetails(), new TypeReference<UsageConsumableInArrearAggregate>() {});
+            final JsonNode jsonNode = objectMapper.readTree(itemDetails);
+            if (!jsonNode.isObject()) {
+                return null;
+            }
+            return (ObjectNode) jsonNode;
         } catch (JsonProcessingException e) {
-            logger.error("Failed to parse the item details for tax item with ID: {}", taxItem.getId(), e);
-        }
-
-        return usageDetail;
-    }
-
-    private String createTaxItemDetails(@Nonnull final TaxItemDetails taxItemDetails) {
-        try {
-            return objectMapper.writeValueAsString(taxItemDetails);
-        } catch (JsonProcessingException exception) {
-            logger.error("Couldn't serialize the tax item details: {}", taxItemDetails, exception);
+            logger.error("Couldn't deserialize the tax item details: {}", itemDetails, e);
             return null;
         }
     }
