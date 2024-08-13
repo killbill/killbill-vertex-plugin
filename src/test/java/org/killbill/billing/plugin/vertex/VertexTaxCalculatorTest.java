@@ -272,11 +272,11 @@ public class VertexTaxCalculatorTest {
 
         //when
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
-
         final ObjectMapper objectMapper = new ObjectMapper();
         final JsonNode expectedNode = objectMapper.readTree(expectedItemDetailsWithTaxRate);
         final JsonNode actualNode = objectMapper.readTree(result.get(0).getItemDetails());
 
+        //then
         assertEquals(expectedNode, actualNode);
     }
 
