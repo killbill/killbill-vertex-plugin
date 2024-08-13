@@ -43,6 +43,7 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
 
 public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
@@ -70,7 +71,7 @@ public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
         final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
 
-        calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
+        calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI, new ObjectMapper());
 
         pluginProperties.add(new PluginProperty(VertexTaxCalculator.SELLER_DIVISION, "328", false));
     }

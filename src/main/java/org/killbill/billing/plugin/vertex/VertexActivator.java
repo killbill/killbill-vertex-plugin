@@ -34,6 +34,8 @@ import org.killbill.billing.plugin.vertex.health.VertexHealthcheck;
 import org.killbill.billing.plugin.vertex.health.VertexHealthcheckServlet;
 import org.osgi.framework.BundleContext;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 public class VertexActivator extends KillbillActivatorBase {
 
     public static final String PLUGIN_NAME = "killbill-vertex";
@@ -58,7 +60,8 @@ public class VertexActivator extends KillbillActivatorBase {
         final VertexTaxCalculator vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler,
                                                                                 dao,
                                                                                 clock.getClock(),
-                                                                                killbillAPI);
+                                                                                killbillAPI,
+                                                                                new ObjectMapper());
         final VertexInvoicePluginApi pluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                                             killbillAPI,
                                                                             configProperties,

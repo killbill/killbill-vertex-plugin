@@ -48,6 +48,8 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 // Note: the test assumes all California authorities are set up to collect sales and use tax (270+)
 public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
 
@@ -88,7 +90,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         final Clock clock = new DefaultClock();
         final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
-        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
+        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI, new ObjectMapper());
         vertexInvoicePluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
@@ -177,7 +179,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         final Clock clock = new DefaultClock();
         final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
-        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
+        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI, new ObjectMapper());
         vertexInvoicePluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),

@@ -113,12 +113,13 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     public VertexTaxCalculator(final VertexApiConfigurationHandler vertexApiConfigurationHandler,
                                final VertexDao dao,
                                final Clock clock,
-                               final OSGIKillbillAPI osgiKillbillAPI) {
+                               final OSGIKillbillAPI osgiKillbillAPI,
+                               final ObjectMapper objectMapper) {
         super(osgiKillbillAPI);
         this.vertexApiConfigurationHandler = vertexApiConfigurationHandler;
         this.clock = clock;
         this.dao = dao;
-        this.objectMapper = new ObjectMapper();
+        this.objectMapper = objectMapper;
     }
 
     public List<InvoiceItem> compute(final Account account,
@@ -374,8 +375,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         try {
             return objectMapper.writeValueAsString(itemDetailsWithTaxRate);
         } catch (JsonProcessingException exception) {
-            logger.error("Couldn't serialize the tax item details: {}", itemDetailsWithTaxRate, exception);
-            return null;
+            logger.error("Couldn't serialize the tax item details {} with tax rate: {}", itemDetailsWithTaxRate, taxRate, exception);
+            return itemDetails;
         }
     }
 
@@ -391,7 +392,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             }
             return (ObjectNode) jsonNode;
         } catch (JsonProcessingException e) {
-            logger.error("Couldn't deserialize the tax item details: {}", itemDetails, e);
+            logger.error("Couldn't deserialize the item details: {}", itemDetails, e);
             return null;
         }
     }

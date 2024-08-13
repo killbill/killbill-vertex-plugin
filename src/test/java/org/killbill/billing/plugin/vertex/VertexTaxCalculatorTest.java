@@ -46,10 +46,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
+import org.mockito.Spy;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -97,6 +99,8 @@ public class VertexTaxCalculatorTest {
     private InvoiceItem adjustment;
     @Mock
     private TaxesType taxesType;
+    @Spy
+    private ObjectMapper objectMapper;
 
     @InjectMocks
     private VertexTaxCalculator vertexTaxCalculator;
@@ -272,12 +276,26 @@ public class VertexTaxCalculatorTest {
 
         //when
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
-        final ObjectMapper objectMapper = new ObjectMapper();
         final JsonNode expectedNode = objectMapper.readTree(expectedItemDetailsWithTaxRate);
         final JsonNode actualNode = objectMapper.readTree(result.get(0).getItemDetails());
 
         //then
         assertEquals(expectedNode, actualNode);
+    }
+
+    @Test(groups = "fast")
+    public void testTaxItemDetailsWhenJsonProcessingException() throws Exception {
+        //given
+        final String invoiceItemDetails = "someItemDetails";
+        given(taxableInvoiceItem.getItemDetails()).willReturn(invoiceItemDetails);
+        given(objectMapper.writeValueAsString(any())).willThrow(JsonProcessingException.class);
+
+        //when
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+
+        //then
+        assertEquals(invoiceItemDetails, result.get(0).getItemDetails());
+        Mockito.reset(objectMapper);
     }
 
     @Test(groups = "fast")
