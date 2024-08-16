@@ -50,6 +50,9 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -249,6 +252,47 @@ public class VertexTaxCalculatorTest {
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
         assertEquals("{\"taxRate\":0.09975}", result.get(0).getItemDetails());
         checkTaxItemFields(result.get(0));
+    }
+
+    @Test(groups = "fast")
+    public void testTaxItemDetailsWhenUsageDetailsExists() throws Exception {
+        //given
+        final Double taxRate = 0.09975d;
+        given(taxesType.getEffectiveRate()).willReturn(taxRate);
+
+        final String itemDetailsWithTierInfo =
+                "{\"tierDetails\":[{\"tier\":1,\"tierUnit\":\"hour\",\"tierPrice\":0.500000000," +
+                "\"tierBlockSize\":1,\"quantity\":1,\"amount\":0.500000000}],\"amount\":0.500000000}";
+        given(taxableInvoiceItem.getItemDetails()).willReturn(itemDetailsWithTierInfo);
+
+        final String expectedItemDetailsWithTaxRate =
+                "{\"tierDetails\":[{\"tier\":1,\"tierUnit\":\"hour\",\"tierPrice\":0.500000000," +
+                "\"tierBlockSize\":1,\"quantity\":1,\"amount\":0.500000000}],\"amount\":0.500000000," +
+                "\"taxRate\":" + taxRate + "}";
+
+        //when
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+        ObjectMapper objectMapper = new ObjectMapper();
+        final JsonNode expectedNode = objectMapper.readTree(expectedItemDetailsWithTaxRate);
+        final JsonNode actualNode = objectMapper.readTree(result.get(0).getItemDetails());
+
+        //then
+        assertEquals(expectedNode, actualNode);
+    }
+
+    @Test(groups = "fast")
+    public void testTaxItemDetailsWhenExistingItemDetailsIsNotJson() throws Exception {
+        //given
+        final Double taxRate = 0.09975d;
+        given(taxesType.getEffectiveRate()).willReturn(taxRate);
+        final String invoiceItemDetails = "someItemDetails";
+        given(taxableInvoiceItem.getItemDetails()).willReturn(invoiceItemDetails);
+
+        //when
+        List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
+
+        //then
+        assertEquals(invoiceItemDetails, result.get(0).getItemDetails());
     }
 
     @Test(groups = "fast")
