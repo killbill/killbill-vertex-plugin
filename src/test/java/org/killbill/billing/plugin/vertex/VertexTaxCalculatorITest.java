@@ -71,7 +71,7 @@ public class VertexTaxCalculatorITest extends VertexRemoteTestBase {
         final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
 
-        calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI, new ObjectMapper());
+        calculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
 
         pluginProperties.add(new PluginProperty(VertexTaxCalculator.SELLER_DIVISION, "328", false));
     }

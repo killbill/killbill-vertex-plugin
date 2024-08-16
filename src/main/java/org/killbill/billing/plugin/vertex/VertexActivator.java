@@ -60,8 +60,7 @@ public class VertexActivator extends KillbillActivatorBase {
         final VertexTaxCalculator vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler,
                                                                                 dao,
                                                                                 clock.getClock(),
-                                                                                killbillAPI,
-                                                                                new ObjectMapper());
+                                                                                killbillAPI);
         final VertexInvoicePluginApi pluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                                             killbillAPI,
                                                                             configProperties,

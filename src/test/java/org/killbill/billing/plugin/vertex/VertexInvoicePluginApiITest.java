@@ -90,7 +90,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         final Clock clock = new DefaultClock();
         final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
-        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI, new ObjectMapper());
+        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),
@@ -179,7 +179,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         final Clock clock = new DefaultClock();
         final VertexApiConfigurationHandler vertexApiConfigurationHandler = new VertexApiConfigurationHandler(VertexActivator.PLUGIN_NAME, osgiKillbillAPI);
         vertexApiConfigurationHandler.setDefaultConfigurable(vertexApiClient);
-        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI, new ObjectMapper());
+        vertexTaxCalculator = new VertexTaxCalculator(vertexApiConfigurationHandler, dao, clock, osgiKillbillAPI);
         vertexInvoicePluginApi = new VertexInvoicePluginApi(vertexApiConfigurationHandler,
                                                             osgiKillbillAPI,
                                                             new OSGIConfigPropertiesService(Mockito.mock(BundleContext.class)),

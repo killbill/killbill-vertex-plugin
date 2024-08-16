@@ -108,18 +108,15 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
     private final VertexDao dao;
     private final Clock clock;
-    private final ObjectMapper objectMapper;
 
     public VertexTaxCalculator(final VertexApiConfigurationHandler vertexApiConfigurationHandler,
                                final VertexDao dao,
                                final Clock clock,
-                               final OSGIKillbillAPI osgiKillbillAPI,
-                               final ObjectMapper objectMapper) {
+                               final OSGIKillbillAPI osgiKillbillAPI) {
         super(osgiKillbillAPI);
         this.vertexApiConfigurationHandler = vertexApiConfigurationHandler;
         this.clock = clock;
         this.dao = dao;
-        this.objectMapper = objectMapper;
     }
 
     public List<InvoiceItem> compute(final Account account,
@@ -362,7 +359,21 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     }
 
     private String addTaxRateToItemDetails(@Nullable final String itemDetails, @Nonnull final Double taxRate) {
-        final ObjectNode existingItemsDetailsJson = deserializeItemDetails(itemDetails);
+        ObjectNode existingItemsDetailsJson = null;
+        final ObjectMapper objectMapper =  new ObjectMapper();
+
+        if (itemDetails != null && !itemDetails.isEmpty()) {
+            try {
+                final JsonNode jsonNode = objectMapper.readTree(itemDetails);
+                if (!jsonNode.isObject()) {
+                    return itemDetails;
+                }
+                existingItemsDetailsJson =  (ObjectNode) jsonNode;
+            } catch (JsonProcessingException e) {
+                logger.error("Couldn't deserialize the item details: {}", itemDetails, e);
+                return itemDetails;
+            }
+        }
 
         final Object itemDetailsWithTaxRate;
         if (existingItemsDetailsJson != null) {
@@ -377,23 +388,6 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
         } catch (JsonProcessingException exception) {
             logger.error("Couldn't serialize the tax item details {} with tax rate: {}", itemDetailsWithTaxRate, taxRate, exception);
             return itemDetails;
-        }
-    }
-
-    private ObjectNode deserializeItemDetails(@Nullable final String itemDetails) {
-        if (itemDetails == null || itemDetails.isEmpty()) {
-            return null;
-        }
-
-        try {
-            final JsonNode jsonNode = objectMapper.readTree(itemDetails);
-            if (!jsonNode.isObject()) {
-                return null;
-            }
-            return (ObjectNode) jsonNode;
-        } catch (JsonProcessingException e) {
-            logger.error("Couldn't deserialize the item details: {}", itemDetails, e);
-            return null;
         }
     }
 
