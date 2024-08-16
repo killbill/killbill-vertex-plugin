@@ -48,8 +48,6 @@ import org.testng.Assert;
 import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 // Note: the test assumes all California authorities are set up to collect sales and use tax (270+)
 public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
 
