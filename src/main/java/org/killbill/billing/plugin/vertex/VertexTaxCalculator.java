@@ -325,8 +325,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             taxRate = calculatedTax.divide(taxableItem.getAmount(), 5, RoundingMode.FLOOR).doubleValue();
         }
 
-        String parentItemID = adjustmentItem == null ? taxableItem.getId().toString() : adjustmentItem.getId().toString();
-        Map<String, Object> additionalDetails = ImmutableMap.of("taxRate", taxRate, "parentItemId", parentItemID);
+        final String parentItemID = adjustmentItem == null ? taxableItem.getId().toString() : adjustmentItem.getId().toString();
+        final Map<String, Object> additionalDetails = ImmutableMap.of("taxRate", taxRate, "parentItemId", parentItemID);
         final String taxItemDetails = appendItemDetails(taxItem.getItemDetails(), additionalDetails);
 
         return new PluginInvoiceItem(new Builder<>()
@@ -379,14 +379,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
         final Object itemDetailsWithAdditionalInfo;
         if (existingItemsDetailsJson != null) {
-            for(Map.Entry e : additionalDetails.entrySet()) {
-                if (e.getValue() instanceof String) {
-                    existingItemsDetailsJson.put((String) e.getKey(), (String) e.getValue());
-                } else if (e.getValue() instanceof Double) {
-                    existingItemsDetailsJson.put((String) e.getKey(), (Double) e.getValue());
-                } else {
-                    logger.warn("Trying to add a value of unsupported type in tax item_details {}", additionalDetails.keySet());
-                }
+            for(Map.Entry<String, Object> detail : additionalDetails.entrySet()) {
+                existingItemsDetailsJson.putPOJO(detail.getKey(), detail.getValue());
             }
             itemDetailsWithAdditionalInfo = existingItemsDetailsJson;
         } else {
