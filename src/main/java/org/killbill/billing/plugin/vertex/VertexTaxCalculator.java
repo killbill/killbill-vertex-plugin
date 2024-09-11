@@ -104,6 +104,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     public static final String KB_TRANSACTION_PREFIX = "kb_";
 
     private static final Logger logger = LoggerFactory.getLogger(VertexTaxCalculator.class);
+    private static final ObjectMapper objectMapper =  new ObjectMapper();
 
     private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
     private final VertexDao dao;
@@ -362,7 +363,6 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
 
     private String appendItemDetails(@Nullable final String itemDetails, @Nonnull final Map<String, Object> additionalDetails) {
         ObjectNode existingItemsDetailsJson = null;
-        final ObjectMapper objectMapper =  new ObjectMapper();
 
         if (itemDetails != null && !itemDetails.isEmpty()) {
             try {
