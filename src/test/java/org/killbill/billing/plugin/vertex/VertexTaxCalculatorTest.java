@@ -250,7 +250,7 @@ public class VertexTaxCalculatorTest {
 
         //then it persisted in item details invoice item field
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
-        assertEquals("{\"taxRate\":0.09975}", result.get(0).getItemDetails());
+        assertEquals(String.format("{\"taxRate\":0.09975,\"parentItemId\":\"%s\"}", TAX_ITEM_ID), result.get(0).getItemDetails());
         checkTaxItemFields(result.get(0));
     }
 
@@ -265,10 +265,10 @@ public class VertexTaxCalculatorTest {
                 "\"tierBlockSize\":1,\"quantity\":1,\"amount\":0.500000000}],\"amount\":0.500000000}";
         given(taxableInvoiceItem.getItemDetails()).willReturn(itemDetailsWithTierInfo);
 
-        final String expectedItemDetailsWithTaxRate =
+        final String expectedItemDetailsWithTaxRate = String.format(
                 "{\"tierDetails\":[{\"tier\":1,\"tierUnit\":\"hour\",\"tierPrice\":0.500000000," +
                 "\"tierBlockSize\":1,\"quantity\":1,\"amount\":0.500000000}],\"amount\":0.500000000," +
-                "\"taxRate\":" + taxRate + "}";
+                "\"taxRate\":%f,\"parentItemId\":\"%s\"}",taxRate, TAX_ITEM_ID.toString());
 
         //when
         List<InvoiceItem> result = vertexTaxCalculator.compute(account, invoice, true, Collections.emptyList(), tenantContext);
@@ -313,7 +313,7 @@ public class VertexTaxCalculatorTest {
 
         //then
         assertEquals(1, result.size());
-        assertEquals("{\"taxRate\":" + expectedTaxRate + "}", result.get(0).getItemDetails());
+        assertEquals(String.format("{\"taxRate\":0.09975,\"parentItemId\":\"%s\"}", TAX_ITEM_ID), result.get(0).getItemDetails());
         checkTaxItemFields(result.get(0));
     }
 
@@ -327,7 +327,7 @@ public class VertexTaxCalculatorTest {
 
         //then
         assertEquals(1, result.size());
-        assertEquals("{\"taxRate\":0.0}", result.get(0).getItemDetails());
+        assertEquals(String.format("{\"taxRate\":0.0,\"parentItemId\":\"%s\"}", TAX_ITEM_ID), result.get(0).getItemDetails());
         checkTaxItemFields(result.get(0));
     }
 

@@ -104,6 +104,7 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
     public static final String KB_TRANSACTION_PREFIX = "kb_";
 
     private static final Logger logger = LoggerFactory.getLogger(VertexTaxCalculator.class);
+    private static final ObjectMapper objectMapper =  new ObjectMapper();
 
     private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
     private final VertexDao dao;
@@ -325,7 +326,9 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             taxRate = calculatedTax.divide(taxableItem.getAmount(), 5, RoundingMode.FLOOR).doubleValue();
         }
 
-        final String taxItemDetails = addTaxRateToItemDetails(taxItem.getItemDetails(), taxRate);
+        final String parentItemID = adjustmentItem == null ? taxableItem.getId().toString() : adjustmentItem.getId().toString();
+        final Map<String, Object> additionalDetails = ImmutableMap.of("taxRate", taxRate, "parentItemId", parentItemID);
+        final String taxItemDetails = appendItemDetails(taxItem.getItemDetails(), additionalDetails);
 
         return new PluginInvoiceItem(new Builder<>()
                                              .withId(taxItem.getId())
@@ -358,9 +361,8 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
                                              .validate().build());
     }
 
-    private String addTaxRateToItemDetails(@Nullable final String itemDetails, @Nonnull final Double taxRate) {
+    private String appendItemDetails(@Nullable final String itemDetails, @Nonnull final Map<String, Object> additionalDetails) {
         ObjectNode existingItemsDetailsJson = null;
-        final ObjectMapper objectMapper =  new ObjectMapper();
 
         if (itemDetails != null && !itemDetails.isEmpty()) {
             try {
@@ -375,18 +377,20 @@ public class VertexTaxCalculator extends PluginTaxCalculator {
             }
         }
 
-        final Object itemDetailsWithTaxRate;
+        final Object itemDetailsWithAdditionalInfo;
         if (existingItemsDetailsJson != null) {
-            existingItemsDetailsJson.put("taxRate", taxRate);
-            itemDetailsWithTaxRate = existingItemsDetailsJson;
+            for(Map.Entry<String, Object> detail : additionalDetails.entrySet()) {
+                existingItemsDetailsJson.putPOJO(detail.getKey(), detail.getValue());
+            }
+            itemDetailsWithAdditionalInfo = existingItemsDetailsJson;
         } else {
-            itemDetailsWithTaxRate = ImmutableMap.of("taxRate", taxRate);
+            itemDetailsWithAdditionalInfo = additionalDetails;
         }
 
         try {
-            return objectMapper.writeValueAsString(itemDetailsWithTaxRate);
+            return objectMapper.writeValueAsString(itemDetailsWithAdditionalInfo);
         } catch (JsonProcessingException exception) {
-            logger.error("Couldn't serialize the tax item details {} with tax rate: {}", itemDetailsWithTaxRate, taxRate, exception);
+            logger.error("Couldn't serialize the tax item_details {} with additional info: {}", itemDetailsWithAdditionalInfo, additionalDetails, exception);
             return itemDetails;
         }
     }
