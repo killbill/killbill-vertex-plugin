@@ -17,6 +17,8 @@
 
 package org.killbill.billing.plugin.vertex;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashSet;
@@ -24,16 +26,21 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.joda.time.LocalDate;
 import org.killbill.billing.ObjectType;
 import org.killbill.billing.account.api.Account;
+import org.killbill.billing.catalog.api.Currency;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
+import org.killbill.billing.invoice.api.InvoiceItemType;
 import org.killbill.billing.invoice.plugin.api.InvoiceContext;
 import org.killbill.billing.invoice.plugin.api.OnSuccessInvoiceResult;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
+import org.killbill.billing.plugin.api.invoice.PluginInvoiceItem;
+import org.killbill.billing.plugin.api.invoice.PluginInvoiceItem.Builder;
 import org.killbill.billing.plugin.api.invoice.PluginInvoicePluginApi;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
@@ -58,6 +65,7 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
     private final VertexTaxCalculator calculator;
     private final VertexApiConfigurationHandler vertexApiConfigurationHandler;
     private final VertexDao dao;
+    private static final BigDecimal FX_RATE =  new BigDecimal("0.85");
 
     public VertexInvoicePluginApi(final VertexApiConfigurationHandler vertexApiConfigurationHandler,
                                   final OSGIKillbillAPI killbillApi,
@@ -79,6 +87,14 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
             return ImmutableList.of();
         }
 
+        logger.info("Input invoice status " + invoice.getStatus());
+        invoice.getInvoiceItems().forEach(item ->
+                                          {
+                                              logger.info(item.getInvoiceItemType() + " "
+                                                         + item.getAmount() + " "
+                                                         + item.getItemDetails());
+                                          });
+
         final Collection<PluginProperty> pluginProperties = Lists.newArrayList(properties);
 
         final Account account = getAccount(invoice.getAccountId(), context);
@@ -86,11 +102,55 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
         checkForTaxCodes(invoice, pluginProperties, context);
 
         try {
-            return calculator.compute(account, invoice, dryRun, pluginProperties, context);
+            List<InvoiceItem> items =  calculator.compute(account, invoice, dryRun, pluginProperties, context);
+            items.forEach(item ->
+                                              {
+                                                  logger.info(item.getInvoiceItemType() + " "
+                                                              + item.getAmount() + " "
+                                                              + item.getItemDetails());
+                                              });
+            BigDecimal rawConvertedTotal = getConvertedRawTotal(invoice.getInvoiceItems()).add(getConvertedRawTotal(items));
+            BigDecimal convertedRoundedTotal = getConvertedRoundedTotal(invoice.getInvoiceItems()).add(getConvertedRoundedTotal(items));
+
+            BigDecimal delta = convertedRoundedTotal.subtract(rawConvertedTotal).divide(FX_RATE, 2, RoundingMode.HALF_UP);
+            logger.info("ROUNDING ADJUSTMENT rawConvertedTotal - {}, convertedRoundedTotal - {}, delta - {}", rawConvertedTotal, convertedRoundedTotal, delta);
+            final ImmutableList.Builder<InvoiceItem> newInvoiceItemsBuilder = ImmutableList.builder();
+            newInvoiceItemsBuilder.addAll(items).add(createRoundingInvoiceItem(invoice, InvoiceItemType.CREDIT_ADJ, delta));
+            return newInvoiceItemsBuilder.build();
         } catch (final Exception e) {
             // Prevent invoice generation
             throw new RuntimeException(e);
         }
+    }
+
+    private BigDecimal getConvertedRoundedTotal(List<InvoiceItem> items) {
+        BigDecimal sum = new BigDecimal("0.0");
+        for (InvoiceItem item : items) {
+            sum = sum.add(item.getAmount().multiply(FX_RATE)).setScale(2, RoundingMode.HALF_UP);
+        }
+        return sum;
+    }
+
+    private BigDecimal getConvertedRawTotal(List<InvoiceItem> items) {
+        BigDecimal sum = new BigDecimal("0.0");
+        for (InvoiceItem item : items) {
+            sum = sum.add(item.getAmount().multiply(FX_RATE));
+        }
+        return sum;
+    }
+
+    private InvoiceItem createRoundingInvoiceItem(final Invoice invoice, InvoiceItemType type, BigDecimal amount) {
+        return new PluginInvoiceItem(new Builder<>()
+                                             .withId(UUID.randomUUID())
+                                             .withInvoiceItemType(type)
+                                             .withInvoiceId(invoice.getId())
+                                             .withAccountId(invoice.getAccountId())
+                                             .withStartDate(new LocalDate())
+                                             .withEndDate(new LocalDate())
+                                             .withAmount(amount)
+                                             .withCurrency(Currency.USD)
+                                             .withDescription("POC TEST " + invoice.getStatus().toString())
+                                             .validate().build());
     }
 
     @Override
