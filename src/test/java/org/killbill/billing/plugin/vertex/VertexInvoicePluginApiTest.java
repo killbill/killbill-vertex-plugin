@@ -31,6 +31,7 @@ import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.plugin.api.InvoiceContext;
 import org.killbill.billing.invoice.plugin.api.OnSuccessInvoiceResult;
+import org.killbill.billing.invoice.plugin.api.boilerplate.plugin.InvoiceContextImp;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
@@ -127,7 +128,7 @@ public class VertexInvoicePluginApiTest {
         final Iterable<PluginProperty> properties = Collections.singletonList(new PluginProperty("VERTEX_SKIP", "anyValue", false));
 
         //when
-        List<InvoiceItem> result = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, properties, callContext);
+        List<InvoiceItem> result = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, properties, new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
 
         //then
         assertEquals(0, result.size());
@@ -144,7 +145,7 @@ public class VertexInvoicePluginApiTest {
         doThrow(Exception.class).when(vertexTaxCalculator).compute(any(Account.class), any(Invoice.class), anyBoolean(), anyList(), any(CallContext.class));
 
         //when
-        vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, Collections.emptyList(), callContext);
+        vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, Collections.emptyList(), new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
     }
 
     @Test(groups = "fast")
@@ -157,7 +158,7 @@ public class VertexInvoicePluginApiTest {
         given(customFieldUserApi.getCustomFieldsForAccountType(invoice.getAccountId(), ObjectType.INVOICE_ITEM, callContext)).willReturn(Collections.emptyList());
 
         //when
-        List<InvoiceItem> result = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, properties, callContext);
+        List<InvoiceItem> result = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, properties, new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
 
         //then
         assertEquals(invoiceItems.size(), result.size());
