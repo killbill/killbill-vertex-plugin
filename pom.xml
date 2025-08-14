@@ -93,6 +93,11 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>io.zonky.test</groupId>
+            <artifactId>embedded-postgres</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
             <version>1.3.5</version>
@@ -222,6 +227,11 @@
                     <artifactId>org.osgi.core</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.testing</groupId>
+            <artifactId>testing-mysql-server</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
