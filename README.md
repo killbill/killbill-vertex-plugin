@@ -11,9 +11,15 @@ Kill Bill compatibility
 -----------------------
 
 | Plugin version | Kill Bill version |
-| -------------: | ----------------: |
-| 0.1.y          | 0.22.z            |
+|---------------:|------------------:|
+|          0.1.y |            0.22.z |
+|          0.2.y |            0.24.z |
 
+
+Requirements
+-------------
+
+The plugin needs a database. The latest version of the schema can be found [here](https://github.com/killbill/killbill-vertex-plugin/tree/master/src/main/resources).
 
 Configuration
 -------------

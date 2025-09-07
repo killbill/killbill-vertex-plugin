@@ -28,12 +28,14 @@ import org.killbill.billing.ObjectType;
 import org.killbill.billing.account.api.Account;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
+import org.killbill.billing.invoice.plugin.api.AdditionalItemsResult;
 import org.killbill.billing.invoice.plugin.api.InvoiceContext;
 import org.killbill.billing.invoice.plugin.api.OnSuccessInvoiceResult;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.api.PluginProperties;
+import org.killbill.billing.plugin.api.invoice.PluginAdditionalItemsResult;
 import org.killbill.billing.plugin.api.invoice.PluginInvoicePluginApi;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
 import org.killbill.billing.plugin.vertex.gen.ApiException;
@@ -71,12 +73,12 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
     }
 
     @Override
-    public List<InvoiceItem> getAdditionalInvoiceItems(final Invoice invoice,
-                                                       final boolean dryRun,
-                                                       final Iterable<PluginProperty> properties,
-                                                       final CallContext context) {
+    public AdditionalItemsResult getAdditionalInvoiceItems(final Invoice invoice,
+                                                           final boolean dryRun,
+                                                           final Iterable<PluginProperty> properties,
+                                                           final InvoiceContext context) {
         if (PluginProperties.findPluginPropertyValue("VERTEX_SKIP", properties) != null) {
-            return ImmutableList.of();
+            return null;
         }
 
         final Collection<PluginProperty> pluginProperties = Lists.newArrayList(properties);
@@ -86,7 +88,9 @@ public class VertexInvoicePluginApi extends PluginInvoicePluginApi {
         checkForTaxCodes(invoice, pluginProperties, context);
 
         try {
-            return calculator.compute(account, invoice, dryRun, pluginProperties, context);
+            List<InvoiceItem> invoiceItems = calculator.compute(account, invoice, dryRun, pluginProperties, context);
+            final AdditionalItemsResult additionalItemsResult = new PluginAdditionalItemsResult(invoiceItems, null);
+            return additionalItemsResult;
         } catch (final Exception e) {
             // Prevent invoice generation
             throw new RuntimeException(e);

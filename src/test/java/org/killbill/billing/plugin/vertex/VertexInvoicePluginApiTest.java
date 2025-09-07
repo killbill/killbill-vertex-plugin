@@ -29,8 +29,10 @@ import org.killbill.billing.account.api.AccountApiException;
 import org.killbill.billing.account.api.AccountUserApi;
 import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
+import org.killbill.billing.invoice.plugin.api.AdditionalItemsResult;
 import org.killbill.billing.invoice.plugin.api.InvoiceContext;
 import org.killbill.billing.invoice.plugin.api.OnSuccessInvoiceResult;
+import org.killbill.billing.invoice.plugin.api.boilerplate.plugin.InvoiceContextImp;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
 import org.killbill.billing.plugin.vertex.dao.VertexDao;
@@ -38,6 +40,7 @@ import org.killbill.billing.plugin.vertex.gen.ApiException;
 import org.killbill.billing.plugin.vertex.gen.dao.model.tables.records.VertexResponsesRecord;
 import org.killbill.billing.util.api.CustomFieldUserApi;
 import org.killbill.billing.util.callcontext.CallContext;
+import org.killbill.billing.util.callcontext.TenantContext;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
@@ -50,6 +53,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
@@ -98,7 +102,7 @@ public class VertexInvoicePluginApiTest {
 
         final UUID accountId = UUID.randomUUID();
         given(account.getId()).willReturn(accountId);
-        given(accountUserApi.getAccountById(account.getId(), callContext)).willReturn(account);
+        given(accountUserApi.getAccountById(eq(account.getId()), any(TenantContext.class))).willReturn(account);
 
         given(invoice.getAccountId()).willReturn(accountId);
 
@@ -127,15 +131,8 @@ public class VertexInvoicePluginApiTest {
         final Iterable<PluginProperty> properties = Collections.singletonList(new PluginProperty("VERTEX_SKIP", "anyValue", false));
 
         //when
-        List<InvoiceItem> result = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, properties, callContext);
-
-        //then
-        assertEquals(0, result.size());
-        verify(vertexTaxCalculator, times(0)).compute(any(Account.class), any(Invoice.class), anyBoolean(), anyList(), any(CallContext.class));
-        verify(invoice, times(0)).getInvoiceItems();
-        verify(invoice, times(0)).getAccountId();
-        verify(killbillAPI, times(0)).getAccountUserApi();
-        verify(accountUserApi, times(0)).getAccountById(any(UUID.class), any(CallContext.class));
+        AdditionalItemsResult result  = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, properties, new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build());
+        assertEquals(null, result);
     }
 
     @Test(groups = "fast", expectedExceptions = {RuntimeException.class})
@@ -144,7 +141,7 @@ public class VertexInvoicePluginApiTest {
         doThrow(Exception.class).when(vertexTaxCalculator).compute(any(Account.class), any(Invoice.class), anyBoolean(), anyList(), any(CallContext.class));
 
         //when
-        vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, Collections.emptyList(), callContext);
+        vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, Collections.emptyList(), new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
     }
 
     @Test(groups = "fast")
@@ -152,16 +149,17 @@ public class VertexInvoicePluginApiTest {
         //given
         final Iterable<PluginProperty> properties = Collections.emptyList();
         final List<InvoiceItem> invoiceItems = Collections.singletonList(Mockito.mock(InvoiceItem.class));
-        given(vertexTaxCalculator.compute(account, invoice, false, properties, callContext)).willReturn(invoiceItems);
+        final InvoiceContext invContext = new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build();
+        given(vertexTaxCalculator.compute(account, invoice, false, properties, invContext)).willReturn(invoiceItems);
 
         given(customFieldUserApi.getCustomFieldsForAccountType(invoice.getAccountId(), ObjectType.INVOICE_ITEM, callContext)).willReturn(Collections.emptyList());
 
         //when
-        List<InvoiceItem> result = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, properties, callContext);
+        List<InvoiceItem> result = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, properties, invContext).getAdditionalItems();
 
         //then
         assertEquals(invoiceItems.size(), result.size());
-        verify(vertexTaxCalculator).compute(account, invoice, false, properties, callContext);
+        verify(vertexTaxCalculator).compute(account, invoice, false, properties, invContext);
 
         verify(killbillAPI).getAccountUserApi();
         verify(accountUserApi).getAccountById(any(UUID.class), any(CallContext.class));

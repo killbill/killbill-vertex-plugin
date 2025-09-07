@@ -32,6 +32,7 @@ import org.killbill.billing.invoice.api.Invoice;
 import org.killbill.billing.invoice.api.InvoiceItem;
 import org.killbill.billing.invoice.api.InvoiceItemType;
 import org.killbill.billing.invoice.api.InvoiceUserApi;
+import org.killbill.billing.invoice.plugin.api.boilerplate.plugin.InvoiceContextImp;
 import org.killbill.billing.osgi.libs.killbill.OSGIConfigPropertiesService;
 import org.killbill.billing.osgi.libs.killbill.OSGIKillbillAPI;
 import org.killbill.billing.payment.api.PluginProperty;
@@ -107,7 +108,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         final InvoiceItem taxableItem1 = TestUtils.buildInvoiceItem(invoice, InvoiceItemType.EXTERNAL_CHARGE, new BigDecimal("100"), null);
         invoiceItems.add(taxableItem1);
         pluginProperties.add(new PluginProperty(String.format("%s_%s", VertexTaxCalculator.TAX_CODE, taxableItem1.getId()), "D9999999", false));
-        List<InvoiceItem> additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, callContext);
+        List<InvoiceItem> additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
         // TAX expected (total $8.63)
         checkTaxes(additionalInvoiceItems, new BigDecimal("8.63"));
 
@@ -117,7 +118,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
          *    $8.63    Tax
          */
         invoiceItems.addAll(additionalInvoiceItems);
-        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, callContext);
+        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
         checkTaxes(additionalInvoiceItems, BigDecimal.ZERO);
 
         /*
@@ -129,7 +130,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
          */
         final InvoiceItem itemAdjustment2 = TestUtils.buildInvoiceItem(invoice, InvoiceItemType.ITEM_ADJ, new BigDecimal("-50"), taxableItem1.getId());
         invoiceItems.add(itemAdjustment2);
-        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, callContext);
+        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
         // TAX expected (total -$4.32)
         checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
@@ -141,7 +142,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
          *   -$4.32    Tax
          */
         invoiceItems.addAll(additionalInvoiceItems);
-        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, callContext);
+        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
         checkTaxes(additionalInvoiceItems, BigDecimal.ZERO);
 
         /*
@@ -154,7 +155,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
          */
         final InvoiceItem itemAdjustment3 = TestUtils.buildInvoiceItem(invoice, InvoiceItemType.ITEM_ADJ, new BigDecimal("-50"), taxableItem1.getId());
         invoiceItems.add(itemAdjustment3);
-        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, callContext);
+        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
         checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
         /*
@@ -167,7 +168,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
          *   -$4.32    Tax
          */
         invoiceItems.addAll(additionalInvoiceItems);
-        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, callContext);
+        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice).withIsDryRun(false).build()).getAdditionalItems();
         checkTaxes(additionalInvoiceItems, BigDecimal.ZERO);
     }
 
@@ -196,7 +197,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         final InvoiceItem taxableItem1 = TestUtils.buildInvoiceItem(invoice1, InvoiceItemType.RECURRING, new BigDecimal("100"), null);
         invoiceItems1.add(taxableItem1);
         pluginProperties.add(new PluginProperty(String.format("%s_%s", VertexTaxCalculator.TAX_CODE, taxableItem1.getId()), "D9999999", false));
-        List<InvoiceItem> additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice1, false, pluginProperties, callContext);
+        List<InvoiceItem> additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice1, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice1).withIsDryRun(false).build()).getAdditionalItems();
         // TAX expected (total $8.63)
         checkTaxes(additionalInvoiceItems, new BigDecimal("8.63"));
 
@@ -206,7 +207,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
          *    $8.63    Tax
          */
         invoiceItems1.addAll(additionalInvoiceItems);
-        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice1, false, pluginProperties, callContext);
+        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice1, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice1).withIsDryRun(false).build()).getAdditionalItems();
         checkTaxes(additionalInvoiceItems, BigDecimal.ZERO);
 
         /*
@@ -220,7 +221,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
         invoiceItems2.add(repair2);
         Mockito.when(osgiKillbillAPI.getInvoiceUserApi().getInvoiceByInvoiceItem(Mockito.eq(taxableItem1.getId()), Mockito.any()))
                .thenReturn(invoice1);
-        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice2, false, pluginProperties, callContext);
+        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice2, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice1).withIsDryRun(false).build()).getAdditionalItems();
         // TAX expected (total -$4.32)
         checkTaxes(additionalInvoiceItems, new BigDecimal("-4.31"));
 
@@ -230,7 +231,7 @@ public class VertexInvoicePluginApiITest extends VertexRemoteTestBase {
          *   -$4.32    Tax
          */
         invoiceItems2.addAll(additionalInvoiceItems);
-        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice2, false, pluginProperties, callContext);
+        additionalInvoiceItems = vertexInvoicePluginApi.getAdditionalInvoiceItems(invoice2, false, pluginProperties, new InvoiceContextImp.Builder<>().withInvoice(invoice1).withIsDryRun(false).build()).getAdditionalItems();
         checkTaxes(additionalInvoiceItems, BigDecimal.ZERO);
     }
 
