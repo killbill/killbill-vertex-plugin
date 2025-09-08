@@ -40,8 +40,8 @@
     </issueManagement>
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
-        <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <jooq.version>3.14.15</jooq.version>
+        <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <osgi.private>org.killbill.billing.plugin.vertex.*</osgi.private>
     </properties>
     <dependencies>
