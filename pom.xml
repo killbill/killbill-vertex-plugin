@@ -24,7 +24,7 @@
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>vertex-plugin</artifactId>
-    <version>0.2.0-SNAPSHOT</version>
+    <version>0.2.1-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <name>Kill Bill OSGI Vertex plugin</name>
     <description>Kill Bill Vertex plugin</description>
@@ -32,6 +32,7 @@
     <scm>
         <connection>scm:git:git://github.com/killbill/killbill-vertex-plugin.git</connection>
         <developerConnection>scm:git:git@github.com:killbill/killbill-vertex-plugin.git</developerConnection>
+        <tag>HEAD</tag>
         <url>http://github.com/killbill/killbill-vertex-plugin/tree/master</url>
     </scm>
     <issueManagement>
@@ -41,6 +42,7 @@
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
         <jooq.version>3.14.15</jooq.version>
+        <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <osgi.private>org.killbill.billing.plugin.vertex.*</osgi.private>
     </properties>
     <dependencies>
