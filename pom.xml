@@ -20,11 +20,11 @@
     <parent>
         <groupId>org.kill-bill.billing</groupId>
         <artifactId>killbill-oss-parent</artifactId>
-        <version>0.146.63</version>
+        <version>0.147.0-9c99329-SNAPSHOT</version>
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>vertex-plugin</artifactId>
-    <version>0.2.2-SNAPSHOT</version>
+    <version>0.3.0-SNAPSHOT</version>
     <packaging>bundle</packaging>
     <name>Kill Bill OSGI Vertex plugin</name>
     <description>Kill Bill Vertex plugin</description>
@@ -41,7 +41,6 @@
     </issueManagement>
     <properties>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
-        <jooq.version>3.14.15</jooq.version>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <osgi.private>org.killbill.billing.plugin.vertex.*</osgi.private>
     </properties>
@@ -49,18 +48,14 @@
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-annotations</artifactId>
-            <version>2.13.4</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-core</artifactId>
-            <version>2.13.4</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
-            <version>2.13.4.1</version>
-            <!-- Fixed https://devhub.checkmarx.com/cve-details/CVE-2022-42004/-->
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -68,21 +63,9 @@
             <version>${jackson.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.jaxrs</groupId>
-            <artifactId>jackson-jaxrs-json-provider</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.google.code.findbugs</groupId>
-            <artifactId>jsr305</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <scope>compile</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.google.inject</groupId>
-            <artifactId>guice</artifactId>
         </dependency>
         <dependency>
             <groupId>io.airlift</groupId>
@@ -102,7 +85,6 @@
         <dependency>
             <groupId>jakarta.annotation</groupId>
             <artifactId>jakarta.annotation-api</artifactId>
-            <version>1.3.5</version>
         </dependency>
         <dependency>
             <groupId>jakarta.servlet</groupId>
@@ -110,8 +92,8 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>javax.inject</groupId>
-            <artifactId>javax.inject</artifactId>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -134,8 +116,8 @@
             <version>5.2.1</version>
         </dependency>
         <dependency>
-            <groupId>org.jooby</groupId>
-            <artifactId>jooby</artifactId>
+            <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-jooby</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jooq</groupId>
@@ -188,7 +170,10 @@
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-databind</artifactId>
                 </exclusion>
-
+                <exclusion>
+                    <groupId>org.kill-bill.commons</groupId>
+                    <artifactId>killbill-jooby</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -208,6 +193,10 @@
                 <exclusion>
                     <groupId>org.jooq</groupId>
                     <artifactId>jooq</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.kill-bill.commons</groupId>
+                    <artifactId>killbill-jooby</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -265,7 +254,6 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
-                <version>3.1.2</version>
                 <configuration>
                     <skip>${check.skip-dependency}</skip>
                     <failOnWarning>${check.fail-dependency}</failOnWarning>
@@ -273,7 +261,6 @@
                     <ignoredUnusedDeclaredDependencies>
                         <!-- It doesn't always detect that org.osgi.framework.ServiceReference is used (by PluginConfigurationHandler for instance) -->
                         <ignoredUnusedDeclaredDependency>org.apache.felix:org.apache.felix.framework</ignoredUnusedDeclaredDependency>
-                        <ignoredUnusedDeclaredDependency>com.fasterxml.jackson.jaxrs:jackson-jaxrs-json-provider</ignoredUnusedDeclaredDependency>
                         <ignoredUnusedDeclaredDependency>jakarta.annotation:jakarta.annotation-api</ignoredUnusedDeclaredDependency>
                     </ignoredUnusedDeclaredDependencies>
                 </configuration>
@@ -363,6 +350,7 @@
                             <generatorName>java</generatorName>
                             <configOptions>
                                 <sourceFolder>src/gen/java/main</sourceFolder>
+                                <useJakartaEe>true</useJakartaEe>
                             </configOptions>
                             <skipValidateSpec>true</skipValidateSpec>
                             <generateApiTests>false</generateApiTests>
@@ -373,6 +361,33 @@
                             <modelPackage>org.killbill.billing.plugin.vertex.gen.client.model</modelPackage>
                             <invokerPackage>org.killbill.billing.plugin.vertex.gen</invokerPackage>
                             <library>apache-httpclient</library>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <!--
+                          OpenAPI Generator 6.4.0/6.6.0's java apache-httpclient template still emits
+                          an unused com.fasterxml.jackson.jaxrs JacksonJsonProvider import even with
+                          useJakartaEe=true. Remove it after generation so the Jakarta migration does
+                          not need to keep the old com.fasterxml.jackson.jaxrs dependency.
+                        -->
+                        <id>patch-openapi-jakarta-imports</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <target>
+                                <replace file="${project.build.directory}/generated-sources/openapi/src/gen/java/main/org/killbill/billing/plugin/vertex/gen/ApiClient.java"
+                                         token="import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;"
+                                         value=""/>
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
