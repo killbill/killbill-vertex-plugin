@@ -20,7 +20,7 @@
     <parent>
         <groupId>org.kill-bill.billing</groupId>
         <artifactId>killbill-oss-parent</artifactId>
-        <version>0.147.0-9c99329-SNAPSHOT</version>
+        <version>0.147.20</version>
     </parent>
     <groupId>org.kill-bill.billing.plugin.java</groupId>
     <artifactId>vertex-plugin</artifactId>
@@ -40,6 +40,7 @@
         <url>https://github.com/killbill/killbill-vertex-plugin/issues</url>
     </issueManagement>
     <properties>
+        <check.fail-spotbugs>true</check.fail-spotbugs>
         <check.spotbugs-exclude-filter-file>spotbugs-exclude.xml</check.spotbugs-exclude-filter-file>
         <maven.javadoc.failOnError>false</maven.javadoc.failOnError>
         <osgi.private>org.killbill.billing.plugin.vertex.*</osgi.private>
@@ -87,13 +88,13 @@
             <artifactId>jakarta.annotation-api</artifactId>
         </dependency>
         <dependency>
+            <groupId>jakarta.inject</groupId>
+            <artifactId>jakarta.inject-api</artifactId>
+        </dependency>
+        <dependency>
             <groupId>jakarta.servlet</groupId>
             <artifactId>jakarta.servlet-api</artifactId>
             <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>jakarta.inject</groupId>
-            <artifactId>jakarta.inject-api</artifactId>
         </dependency>
         <dependency>
             <groupId>joda-time</groupId>
@@ -114,10 +115,6 @@
             <groupId>org.apache.httpcomponents.core5</groupId>
             <artifactId>httpcore5</artifactId>
             <version>5.2.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.kill-bill.commons</groupId>
-            <artifactId>killbill-jooby</artifactId>
         </dependency>
         <dependency>
             <groupId>org.jooq</groupId>
@@ -221,6 +218,10 @@
         </dependency>
         <dependency>
             <groupId>org.kill-bill.commons</groupId>
+            <artifactId>killbill-jooby</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.kill-bill.commons</groupId>
             <artifactId>killbill-utils</artifactId>
             <scope>runtime</scope>
         </dependency>
@@ -246,6 +247,27 @@
     </dependencies>
     <build>
         <plugins>
+            <!--
+              killbill-oss-parent binds sortpom-maven-plugin to alphabetically re-sort <plugins> on
+              every `mvn verify`/install. That breaks this module: maven-antrun-plugin's
+              patch-openapi-jakarta-imports execution must run, in declaration order, after
+              jooq-codegen-maven and openapi-generator-maven-plugin (same generate-sources phase),
+              but "org.apache.maven.plugins" sorts before "org.jooq"/"org.openapitools", so sortpom
+              keeps moving antrun back to the top and silently breaking the build. Disable plugin
+              sorting here (dependency sorting is untouched) so our required order sticks.
+            -->
+            <plugin>
+                <groupId>com.github.ekryd.sortpom</groupId>
+                <artifactId>sortpom-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default</id>
+                        <configuration>
+                            <sortPlugins combine.self="override" />
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
             <plugin>
                 <groupId>org.apache.felix</groupId>
                 <artifactId>maven-bundle-plugin</artifactId>
@@ -372,10 +394,9 @@
                 <executions>
                     <execution>
                         <!--
-                          OpenAPI Generator 6.4.0/6.6.0's java apache-httpclient template still emits
-                          an unused com.fasterxml.jackson.jaxrs JacksonJsonProvider import even with
-                          useJakartaEe=true. Remove it after generation so the Jakarta migration does
-                          not need to keep the old com.fasterxml.jackson.jaxrs dependency.
+                          openapi-generator 6.4.0's apache-httpclient template still imports
+                          com.fasterxml.jackson.jaxrs.JacksonJsonProvider even with useJakartaEe=true.
+                          Strip it post-generation so we don't need the jackson-jaxrs dependency.
                         -->
                         <id>patch-openapi-jakarta-imports</id>
                         <goals>
@@ -384,9 +405,7 @@
                         <phase>generate-sources</phase>
                         <configuration>
                             <target>
-                                <replace file="${project.build.directory}/generated-sources/openapi/src/gen/java/main/org/killbill/billing/plugin/vertex/gen/ApiClient.java"
-                                         token="import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;"
-                                         value=""/>
+                                <replace file="${project.build.directory}/generated-sources/openapi/src/gen/java/main/org/killbill/billing/plugin/vertex/gen/ApiClient.java" token="import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;" value="" />
                             </target>
                         </configuration>
                     </execution>
