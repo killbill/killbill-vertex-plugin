@@ -16,6 +16,8 @@ Kill Bill compatibility
 |          0.2.y |            0.24.z |
 |          0.3.y |            0.26.z |
 
+Version `0.3.y` mark of removal Java EE `javax` namespace and use `jakarta` namespace instead.
+
 
 Requirements
 -------------
