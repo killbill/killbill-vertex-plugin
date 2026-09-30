@@ -276,30 +276,6 @@
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <version>3.1.0</version>
-                <executions>
-                    <execution>
-                        <!--
-                          openapi-generator 6.4.0's apache-httpclient template still imports
-                          com.fasterxml.jackson.jaxrs.JacksonJsonProvider even with useJakartaEe=true.
-                          Strip it post-generation so we don't need the jackson-jaxrs dependency.
-                        -->
-                        <id>patch-openapi-jakarta-imports</id>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                        <phase>generate-sources</phase>
-                        <configuration>
-                            <target>
-                                <replace file="${project.build.directory}/generated-sources/openapi/src/gen/java/main/org/killbill/billing/plugin/vertex/gen/ApiClient.java" token="import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;" value="" />
-                            </target>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <configuration>
                     <skip>${check.skip-dependency}</skip>
@@ -408,6 +384,30 @@
                             <modelPackage>org.killbill.billing.plugin.vertex.gen.client.model</modelPackage>
                             <invokerPackage>org.killbill.billing.plugin.vertex.gen</invokerPackage>
                             <library>apache-httpclient</library>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>3.1.0</version>
+                <executions>
+                    <execution>
+                        <!--
+                          openapi-generator 6.4.0's apache-httpclient template still imports
+                          com.fasterxml.jackson.jaxrs.JacksonJsonProvider even with useJakartaEe=true.
+                          Strip it post-generation so we don't need the jackson-jaxrs dependency.
+                        -->
+                        <id>patch-openapi-jakarta-imports</id>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <target>
+                                <replace file="${project.build.directory}/generated-sources/openapi/src/gen/java/main/org/killbill/billing/plugin/vertex/gen/ApiClient.java" token="import com.fasterxml.jackson.jaxrs.json.JacksonJsonProvider;" value="" />
+                            </target>
                         </configuration>
                     </execution>
                 </executions>
